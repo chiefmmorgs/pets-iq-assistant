@@ -5,7 +5,20 @@ export function Sidebar() {
     // Find the symptoms textarea and populate it
     const symptomsTextarea = document.querySelector('[data-testid="textarea-symptoms"]') as HTMLTextAreaElement;
     if (symptomsTextarea) {
-      symptomsTextarea.value = query;
+      // Use React's way to update the value properly
+      const nativeTextAreaValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value")?.set;
+      if (nativeTextAreaValueSetter) {
+        nativeTextAreaValueSetter.call(symptomsTextarea, query);
+      } else {
+        // Defensive fallback for non-standard environments
+        symptomsTextarea.value = query;
+      }
+      
+      // Dispatch the input event that React Hook Form listens to
+      const event = new Event('input', { bubbles: true });
+      symptomsTextarea.dispatchEvent(event);
+      
+      // Focus the textarea
       symptomsTextarea.focus();
     }
   };
