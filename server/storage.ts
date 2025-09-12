@@ -1,5 +1,6 @@
-import { type Assessment, type InsertAssessment } from "@shared/schema";
-import { randomUUID } from "crypto";
+import { assessments, type Assessment, type InsertAssessment } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   createAssessment(assessment: InsertAssessment): Promise<Assessment>;
@@ -7,31 +8,26 @@ export interface IStorage {
   getAllAssessments(): Promise<Assessment[]>;
 }
 
-export class MemStorage implements IStorage {
-  private assessments: Map<string, Assessment>;
-
-  constructor() {
-    this.assessments = new Map();
-  }
-
+export class DatabaseStorage implements IStorage {
   async createAssessment(insertAssessment: InsertAssessment): Promise<Assessment> {
-    const id = randomUUID();
-    const assessment: Assessment = { 
-      ...insertAssessment, 
-      id,
-      createdAt: new Date()
-    };
-    this.assessments.set(id, assessment);
+    const [assessment] = await db
+      .insert(assessments)
+      .values(insertAssessment)
+      .returning();
     return assessment;
   }
 
   async getAssessment(id: string): Promise<Assessment | undefined> {
-    return this.assessments.get(id);
+    const [assessment] = await db
+      .select()
+      .from(assessments)
+      .where(eq(assessments.id, id));
+    return assessment || undefined;
   }
 
   async getAllAssessments(): Promise<Assessment[]> {
-    return Array.from(this.assessments.values());
+    return await db.select().from(assessments);
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
