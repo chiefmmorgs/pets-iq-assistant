@@ -84,6 +84,18 @@
     mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     mask-composite: xor;
     -webkit-mask-composite: xor;
+    pointer-events: none;
+  }
+
+  /* Ensure radix-ui dropdowns work properly */
+  [data-radix-select-content] {
+    z-index: 50;
+    background: var(--popover);
+    border: 1px solid var(--border);
+  }
+
+  [data-radix-select-viewport] {
+    padding: 4px;
   }
 
   .chat-bubble {

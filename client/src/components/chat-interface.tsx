@@ -160,13 +160,22 @@ export function ChatInterface({ emergencyDetected, setEmergencyDetected }: ChatI
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Pet Age</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="e.g., 3 years old" 
-                          {...field} 
-                          data-testid="input-pet-age"
-                        />
-                      </FormControl>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-pet-age">
+                            <SelectValue placeholder="Select pet age" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="under 6 months">Under 6 months</SelectItem>
+                          <SelectItem value="6 months - 1 year">6 months - 1 year</SelectItem>
+                          <SelectItem value="1-2 years">1-2 years</SelectItem>
+                          <SelectItem value="3-5 years">3-5 years</SelectItem>
+                          <SelectItem value="6-8 years">6-8 years</SelectItem>
+                          <SelectItem value="9-12 years">9-12 years</SelectItem>
+                          <SelectItem value="over 12 years">Over 12 years</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </FormItem>
                   )}
                 />
