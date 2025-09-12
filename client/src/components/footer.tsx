@@ -1,4 +1,4 @@
-import logoUrl from '@assets/chiefmmorgs_white_1757691007314.png';
+import logoUrl from '@assets/chiefmmorgs_white_1757691242974.png';
 
 export function Footer() {
   return (
@@ -32,7 +32,7 @@ export function Footer() {
             <img 
               src={logoUrl} 
               alt="Chiefmmorgs logo" 
-              className="h-4 w-auto opacity-80"
+              className="h-6 w-auto opacity-80"
               data-testid="img-brand-logo"
             />
           </div>
