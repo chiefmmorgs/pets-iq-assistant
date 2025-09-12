@@ -49,17 +49,19 @@ export function Sidebar() {
                 <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"></path>
               </svg>
               <div>
-                <p className="font-medium">24/7 Pet Emergency</p>
-                <p className="text-muted-foreground">1-800-PET-HELP</p>
+                <p className="font-medium">Local Pet Emergency</p>
+                <p className="text-muted-foreground">Search "24/7 animal emergency clinic" in your country or use Google Maps</p>
               </div>
             </div>
             <div className="p-3 rounded-lg bg-muted/50">
               <p className="font-medium mb-1">Poison Control</p>
-              <p className="text-muted-foreground">ASPCA: (888) 426-4435</p>
+              <p className="text-muted-foreground mb-2">Check your local animal poison helpline.</p>
+              <p className="text-muted-foreground mb-1"><strong>United States:</strong> ASPCA Animal Poison Control Center +1 (888) 426-4435</p>
+              <p className="text-muted-foreground">Other countries: search "animal poison control hotline" + your country</p>
             </div>
             <div className="p-3 rounded-lg bg-muted/50">
               <p className="font-medium mb-1">Find Nearest Vet</p>
-              <p className="text-muted-foreground">Use Google Maps or call 411</p>
+              <p className="text-muted-foreground">Use Google Maps, local veterinary directories, or ask your local emergency number depending on your country</p>
             </div>
           </div>
         </div>
