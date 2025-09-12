@@ -25,7 +25,7 @@ export function Footer() {
         </div>
         <div className="border-t border-border/50 mt-8 pt-8 relative">
           <div className="text-center text-sm text-muted-foreground">
-            <p>&copy; 2024 Pets IQ Bot. Powered by AI veterinary expertise.</p>
+            <p>&copy; 2025 Pets IQ Bot. Powered by AI veterinary expertise.</p>
           </div>
           <div className="absolute bottom-0 left-0 flex items-center gap-2 text-xs text-muted-foreground/70 pointer-events-none">
             <span data-testid="text-branding">something by</span>
