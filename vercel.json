@@ -1,12 +1,11 @@
 {
   "version": 2,
-  "buildCommand": "vite build",
-  "outputDirectory": "dist/public",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "installCommand": "npm install",
   "functions": {
     "api/index.ts": {
-      "runtime": "nodejs20.x",
-      "maxDuration": 30
+      "runtime": "nodejs18.x"
     }
   },
   "routes": [
