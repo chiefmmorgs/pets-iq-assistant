@@ -1,0 +1,273 @@
+Project tree
+.
+├── requirements.txt
+├── app.py
+├── roma.yaml
+├── prompts/
+│ └── vet_system.txt
+├── data/
+│ └── triage_rules.json
+└── static/
+└── index.html
+
+requirements.txt
+flask
+pydantic
+python-dotenv
+
+When you’re ready to use ROMA, uncomment the next line:
+roma-agi
+
+prompts/vet_system.txt
+You are a friendly veterinarian assistant for pet owners.
+Goals
+
+Answer common questions about pet health, nutrition, behavior, and care.
+
+Give clear, simple, actionable steps a pet owner can do at home.
+
+Escalate emergencies to “Go to the nearest emergency vet now.”
+
+Safety and boundaries
+
+If any emergency signals appear (bleeding, choking, collapse, seizures, poisoning, breathing problems, pale gums, heatstroke, inability to urinate/defecate), say:
+“This is an emergency. Please take your pet to the nearest veterinary clinic or emergency animal hospital right now.”
+
+Do not prescribe human medications. Do not guess rare diagnoses.
+
+Ask for missing basics: species, age, breed/size, sex/neuter status, weight, key symptoms, duration, appetite, energy, hydration, vomiting/diarrhea, exposures (toxins, new food), vaccines/parasite prevention.
+
+Response style
+
+Empathetic, calm, short sentences, plain words.
+
+Give 3–5 clear steps max. Add “see a vet if X persists or worsens.”
+
+Output schema (Ripley-friendly)
+Return JSON with:
+{
+"triage": "ok" | "emergency" | "see_vet_soon",
+"summary": "<one-line plain summary>",
+"advice": ["step 1", "step 2", "..."],
+"when_to_see_vet": "<clear condition or timeframe>",
+"disclaimer": "Information only. Not a diagnosis."
+}
+
+data/triage_rules.json
+{
+"emergency_keywords": [
+"bleeding",
+"choking",
+"collapsed",
+"seizure",
+"poison",
+"breathing",
+"blue gums",
+"pale gums",
+"heatstroke",
+"cant urinate",
+"cannot urinate",
+"blocked",
+"struggling to breathe",
+"hit by car"
+],
+"see_vet_soon_keywords": [
+"lethargic",
+"not eating",
+"not drinking",
+"vomiting",
+"diarrhea",
+"pain",
+"limping",
+"cough",
+"itching",
+"rash"
+]
+}
+
+roma.yaml
+
+Minimal ROMA plan for a single-turn vet assistant.
+You can expand this into hierarchical subtasks later.
+
+agent:
+name: "FluxPlus Vet Agent"
+description: "ROMA-powered veterinarian assistant for pet owners"
+
+Set your LLM provider in env or a sentient.yaml later.
+
+planner:
+# For a simple app we treat each query as atomic unless emergency is detected.
+atomic_decider: "keyword"
+atomic_keywords:
+- "dog"
+- "cat"
+- "puppy"
+- "kitten"
+- "parrot"
+- "rabbit"
+executors:
+- name: "triage_and_advice"
+type: "python"
+entrypoint: "app:triage_and_advise_executor"
+aggregator:
+type: "passthrough"
+routing:
+rules:
+- when: "any"
+then: "triage_and_advice"
+
+static/index.html
+
+<!doctype html> <html> <head> <meta charset="utf-8"> <title>Vet Assistant</title> <meta name="viewport" content="width=device-width,initial-scale=1"> <style> body{font-family:system-ui,Arial,sans-serif;max-width:720px;margin:40px auto;padding:0 16px} textarea{width:100%;height:140px} button{padding:10px 14px;margin-top:8px;cursor:pointer} pre{background:#f5f5f5;padding:12px;border-radius:8px;white-space:pre-wrap} </style> </head> <body> <h1>Veterinarian Assistant</h1> <p>Describe your pet’s issue. Include species, age, weight, symptoms, and when it started.</p> <textarea id="q" placeholder="Example: My 2-year-old cat has had diarrhea since yesterday, still drinking water."></textarea> <button onclick="send()">Ask</button> <pre id="out"></pre> <script> async function send(){ const q = document.getElementById('q').value; const r = await fetch('/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({query:q}) }); const data = await r.json(); document.getElementById('out').textContent = JSON.stringify(data, null, 2); } </script> </body> </html>
+
+app.py
+import json
+import os
+from typing import Dict, List
+from pydantic import BaseModel
+from flask import Flask, request, jsonify, send_from_directory
+
+Optional: wire ROMA when you’re ready
+
+ROMA_AVAILABLE = False
+try:
+from roma import ROMAAgent # pip install roma-agi
+ROMA_AVAILABLE = True
+except Exception:
+ROMA_AVAILABLE = False
+
+---------- Prompt + rules ----------
+
+with open("prompts/vet_system.txt", "r", encoding="utf-8") as f:
+VET_SYSTEM = f.read()
+
+with open("data/triage_rules.json", "r", encoding="utf-8") as f:
+TRIAGE = json.load(f)
+
+---------- Simple keyword triage ----------
+
+def classify(text: str) -> str:
+t = text.lower()
+for k in TRIAGE["emergency_keywords"]:
+if k in t:
+return "emergency"
+for k in TRIAGE["see_vet_soon_keywords"]:
+if k in t:
+return "see_vet_soon"
+return "ok"
+
+---------- A tiny, LLM-free executor (works on Replit without keys) ----------
+
+def local_advice(query: str) -> Dict:
+status = classify(query)
+summary = "Pet issue described by owner."
+
+if status == "emergency":
+    return {
+        "triage": "emergency",
+        "summary": summary,
+        "advice": ["This is an emergency. Go to the nearest emergency vet now."],
+        "when_to_see_vet": "Now",
+        "disclaimer": "Information only. Not a diagnosis."
+    }
+
+steps: List[str] = []
+when = ""
+
+if "diarrhea" in query.lower():
+    steps = [
+        "Offer small amounts of water often.",
+        "Withhold food for 8–12 hours if adult and otherwise healthy.",
+        "Reintroduce bland diet: boiled rice with plain chicken, small portions.",
+        "Keep the litter box or yard clean to monitor."
+    ]
+    when = "See a vet if diarrhea lasts beyond 24–48 hours, there is blood, or your pet becomes weak."
+
+elif "vomit" in query.lower():
+    steps = [
+        "Remove food for 8–12 hours; allow small sips of water.",
+        "If no more vomiting, start small bland meals.",
+        "Avoid fatty or new foods for 48 hours."
+    ]
+    when = "See a vet if vomiting repeats, there is blood, your pet is lethargic, or not drinking."
+
+else:
+    steps = [
+        "Monitor appetite, water intake, energy, and bathroom habits.",
+        "Offer fresh water and a quiet place to rest.",
+        "Avoid new foods or treats for 24 hours."
+    ]
+    when = "See a vet if symptoms persist beyond 24–48 hours or your pet seems worse."
+
+return {
+    "triage": status,
+    "summary": summary,
+    "advice": steps,
+    "when_to_see_vet": when,
+    "disclaimer": "Information only. Not a diagnosis."
+}
+
+---------- ROMA executor hook (used by roma.yaml) ----------
+
+def triage_and_advise_executor(params: Dict) -> Dict:
+# ROMA will pass {"query": "..."} by default for a simple atomic task
+q = params.get("query", "")
+return local_advice(q)
+
+---------- Optional: LLM-backed reasoning (plug in later) ----------
+Example: set OPENAI_API_KEY in Replit Secrets, then replace local_advice with an LLM call
+keeping VET_SYSTEM as the system message and asking it to emit the Output schema JSON.
+---------- Flask app ----------
+
+app = Flask(name, static_folder="static")
+
+@app.route("/")
+def index():
+return send_from_directory("static", "index.html")
+
+class ChatIn(BaseModel):
+query: str
+
+@app.route("/chat", methods=["POST"])
+def chat():
+data = request.get_json(force=True)
+query = data.get("query", "")
+
+# If ROMA is available, you could run the roma agent here.
+if ROMA_AVAILABLE:
+    # Example usage; adjust to your ROMAAgent API if needed:
+    agent = ROMAAgent(config_path="roma.yaml")
+    result = agent.run(query)
+    # Expect result already in the schema; if not, normalize:
+    return jsonify(result)
+
+# Fallback: local advice (no keys, works on Replit now)
+return jsonify(local_advice(query))
+
+
+if name == "main":
+app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
+
+How to use on Replit
+
+Create a new Python Repl.
+
+Add the files above exactly.
+
+Click Run. Open the webview. Type a pet question. You’ll get structured JSON output.
+
+When you want full ROMA:
+
+Uncomment roma-agi in requirements.txt, click Reinstall.
+
+Keep roma.yaml as is. ROMA will call triage_and_advise_executor.
+
+Later, swap local_advice with a real LLM call that follows prompts/vet_system.txt and returns the JSON schema.
+
+Notes for your “FluxPlus ROMA sentient agent”
+• Naming: the agent in roma.yaml is “FluxPlus Vet Agent” so your stack name sticks.
+• Ripley compatibility: responses are strict JSON with fixed keys, easy for a UI or workflow runner to parse.
+• Extend the plan: add executors like “diet_lookup”, “vax_schedule”, “poison_hotline”, then set routing rules by keywords or a classifier.
+• Persistence: log chats to a CSV or SQLite if you want history.
+• Frontend: replace static/index.html with your own UI later.
