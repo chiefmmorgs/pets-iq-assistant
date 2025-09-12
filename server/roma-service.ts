@@ -1,0 +1,145 @@
+import { triageResponseSchema, type TriageResponse } from "@shared/schema";
+import { spawn } from "child_process";
+
+// ROMA-powered advice generation service
+export async function generateROMAAdvice(
+  petType: string,
+  petAge: string,
+  symptoms: string
+): Promise<TriageResponse> {
+  try {
+    // Call our Python ROMA service
+    const romaResponse = await callROMAPythonService(petType, petAge, symptoms);
+    
+    if (romaResponse) {
+      return triageResponseSchema.parse(romaResponse);
+    }
+    
+    // Fallback to local processing if ROMA service is unavailable
+    console.log("ROMA service unavailable, using local processing");
+    return generateLocalAdvice(petType, petAge, symptoms);
+  } catch (error) {
+    console.error("ROMA service error:", error);
+    return generateLocalAdvice(petType, petAge, symptoms);
+  }
+}
+
+async function callROMAPythonService(petType: string, petAge: string, symptoms: string): Promise<any> {
+  try {
+    // Try to call the Python ROMA service
+    const response = await fetch('http://localhost:8000/assess', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        pet_type: petType,
+        pet_age: petAge,
+        symptoms: symptoms
+      })
+    });
+
+    if (response.ok) {
+      return await response.json();
+    } else {
+      console.log("ROMA service responded with error:", response.status);
+      return null;
+    }
+  } catch (error) {
+    console.log("Failed to connect to ROMA service:", error);
+    return null;
+  }
+}
+
+function generateLocalAdvice(petType: string, petAge: string, symptoms: string): TriageResponse {
+  // Local fallback processing
+  const lowerSymptoms = symptoms.toLowerCase();
+    
+    // Emergency detection logic
+    const emergencyKeywords = [
+      "bleeding", "choking", "collapsed", "seizure", "poison",
+      "breathing", "blue gums", "pale gums", "heatstroke",
+      "cant urinate", "cannot urinate", "blocked",
+      "struggling to breathe", "hit by car"
+    ];
+
+    const urgentKeywords = [
+      "lethargic", "not eating", "not drinking", "vomiting", "appetite",
+      "diarrhea", "pain", "limping", "cough", "itching", "rash"
+    ];
+
+    let triage: "emergency" | "see_vet_soon" | "ok" = "ok";
+    
+    for (const keyword of emergencyKeywords) {
+      if (lowerSymptoms.includes(keyword)) {
+        triage = "emergency";
+        break;
+      }
+    }
+    
+    if (triage !== "emergency") {
+      for (const keyword of urgentKeywords) {
+        if (lowerSymptoms.includes(keyword)) {
+          triage = "see_vet_soon";
+          break;
+        }
+      }
+    }
+
+    // Generate contextual advice based on pet type, age, and symptoms
+    let advice: string[] = [];
+    let when_to_see_vet = "";
+    let summary = "";
+
+    if (triage === "emergency") {
+      summary = "Emergency situation detected requiring immediate veterinary attention.";
+      advice = ["This is an emergency. Go to the nearest emergency vet now."];
+      when_to_see_vet = "Immediately";
+    } else if (lowerSymptoms.includes("diarrhea")) {
+      summary = `${petType} experiencing digestive issues that need monitoring and care.`;
+      advice = [
+        "Offer small amounts of water frequently to prevent dehydration",
+        "Withhold food for 8-12 hours if adult and otherwise healthy",
+        "Gradually reintroduce bland diet: boiled rice with plain chicken",
+        "Monitor frequency and consistency of bowel movements"
+      ];
+      when_to_see_vet = "See a vet if diarrhea lasts beyond 24-48 hours, contains blood, or your pet becomes weak";
+    } else if (lowerSymptoms.includes("vomit")) {
+      summary = `${petType} showing signs of nausea/digestive upset requiring careful monitoring.`;
+      advice = [
+        "Remove food for 8-12 hours; allow small sips of water",
+        "After fasting, offer small bland meals every few hours",
+        "Avoid fatty foods and new treats for 48 hours",
+        "Monitor for signs of dehydration or lethargy"
+      ];
+      when_to_see_vet = "See a vet if vomiting repeats, contains blood, or your pet becomes lethargic";
+    } else if (lowerSymptoms.includes("not eating") || lowerSymptoms.includes("appetite")) {
+      summary = `Loss of appetite in ${petAge} ${petType} requires attention and monitoring.`;
+      advice = [
+        "Ensure fresh water is always available",
+        "Try warming food slightly to enhance aroma and palatability",
+        "Offer high-value treats or favorite foods in small amounts",
+        "Check for signs of mouth pain or dental discomfort"
+      ];
+      when_to_see_vet = "See a vet if appetite loss continues beyond 24 hours or is accompanied by lethargy";
+    } else {
+      summary = `General health concern for ${petAge} ${petType} requiring observation.`;
+      advice = [
+        "Monitor appetite, water intake, energy levels, and bathroom habits",
+        "Provide a quiet, comfortable environment for rest",
+        "Avoid introducing new foods or treats for 24-48 hours",
+        "Document symptoms with photos/videos if possible"
+      ];
+      when_to_see_vet = "See a vet if symptoms persist beyond 24-48 hours or worsen";
+    }
+
+    const response: TriageResponse = {
+      triage,
+      summary,
+      advice,
+      when_to_see_vet,
+      disclaimer: "Information only. Not a diagnosis."
+    };
+
+    return triageResponseSchema.parse(response);
+}

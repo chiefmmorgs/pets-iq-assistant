@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { petAssessmentSchema } from "@shared/schema";
-import { generateAIAdvice } from "./openai-service";
+import { generateROMAAdvice } from "./roma-service";
 
 export function registerRoutes(app: Express): Server {
   // Pet assessment endpoint
@@ -10,8 +10,8 @@ export function registerRoutes(app: Express): Server {
     try {
       const { petType, petAge, symptoms } = petAssessmentSchema.parse(req.body);
       
-      // Generate AI-powered triage response
-      const triageResult = await generateAIAdvice(petType, petAge, symptoms);
+      // Generate ROMA-powered triage response
+      const triageResult = await generateROMAAdvice(petType, petAge, symptoms);
       
       // Store assessment
       const assessment = await storage.createAssessment({
