@@ -1,3 +1,5 @@
+import logoUrl from '@assets/chiefmmorgs_white_1757691007314.png';
+
 export function Footer() {
   return (
     <footer className="border-t border-border/50 bg-background/80 backdrop-blur-sm mt-16">
@@ -21,8 +23,19 @@ export function Footer() {
             <p className="text-sm text-muted-foreground">This tool provides guidance only. For true emergencies, contact your veterinarian or emergency animal hospital immediately.</p>
           </div>
         </div>
-        <div className="border-t border-border/50 mt-8 pt-8 text-center text-sm text-muted-foreground">
-          <p>&copy; 2024 Pets IQ Bot. Powered by AI veterinary expertise.</p>
+        <div className="border-t border-border/50 mt-8 pt-8 relative">
+          <div className="text-center text-sm text-muted-foreground">
+            <p>&copy; 2024 Pets IQ Bot. Powered by AI veterinary expertise.</p>
+          </div>
+          <div className="absolute bottom-0 left-0 flex items-center gap-2 text-xs text-muted-foreground/70 pointer-events-none">
+            <span data-testid="text-branding">something by</span>
+            <img 
+              src={logoUrl} 
+              alt="Chiefmmorgs logo" 
+              className="h-4 w-auto opacity-80"
+              data-testid="img-brand-logo"
+            />
+          </div>
         </div>
       </div>
     </footer>
