@@ -13,3 +13,13 @@ spec/
 specs/
 .tmp
 .temp
+
+# Python files - ROMA service (not deployed to Vercel)
+*.py
+server/roma/
+pyproject.toml
+uv.lock
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
