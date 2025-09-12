@@ -6,7 +6,7 @@ export const TRIAGE_RULES = {
     "struggling to breathe", "hit by car"
   ],
   see_vet_soon_keywords: [
-    "lethargic", "not eating", "not drinking", "vomiting",
+    "lethargic", "not eating", "not drinking", "vomiting", "appetite",
     "diarrhea", "pain", "limping", "cough", "itching", "rash"
   ]
 };
