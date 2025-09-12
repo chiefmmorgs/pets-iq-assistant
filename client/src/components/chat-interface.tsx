@@ -38,8 +38,19 @@ export function ChatInterface({ emergencyDetected, setEmergencyDetected }: ChatI
 
   const assessmentMutation = useMutation({
     mutationFn: async (data: PetAssessmentRequest) => {
-      const response = await apiRequest("POST", "/api/assess", data);
-      return response.json() as Promise<TriageResponse & { id: string }>;
+      try {
+        const response = await apiRequest("POST", "/api/assess", data);
+        
+        if (!response.ok) {
+          throw new Error(`Assessment failed: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        return result as TriageResponse & { id: string };
+      } catch (error) {
+        console.error("Assessment mutation error:", error);
+        throw error;
+      }
     },
     onSuccess: (response, variables) => {
       // Add user message
@@ -67,6 +78,16 @@ export function ChatInterface({ emergencyDetected, setEmergencyDetected }: ChatI
       }
 
       form.reset();
+    },
+    onError: (error) => {
+      console.error("Assessment failed:", error);
+      // Add error message to chat
+      const errorMessage: ChatMessage = {
+        id: Date.now().toString(),
+        content: "Sorry, there was an error processing your request. Please try again.",
+        isUser: false,
+      };
+      setMessages(prev => [...prev, errorMessage]);
     },
   });
 
