@@ -1,7 +1,6 @@
 import type { Express } from "express";
-import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { petAssessmentSchema, triageResponseSchema } from "@shared/schema";
+import { petAssessmentSchema } from "../shared/schema";
 
 // Triage rules ported from Python backend
 const TRIAGE_RULES = {
@@ -96,7 +95,7 @@ function generateAdvice(query: string) {
   };
 }
 
-export function registerRoutes(app: Express): Server {
+export function registerApiRoutes(app: Express): void {
   // Pet assessment endpoint
   app.post("/api/assess", async (req, res) => {
     try {
@@ -139,7 +138,4 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ message: "Internal server error" });
     }
   });
-
-  const httpServer = createServer(app);
-  return httpServer;
 }
