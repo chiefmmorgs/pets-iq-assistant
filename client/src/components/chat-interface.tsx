@@ -77,7 +77,8 @@ export function ChatInterface({ emergencyDetected, setEmergencyDetected }: ChatI
         setEmergencyDetected(false);
       }
 
-      form.reset();
+      // Only reset symptoms field, keep pet type and age selections
+      form.setValue("symptoms", "");
     },
     onError: (error) => {
       console.error("Assessment failed:", error);
@@ -137,7 +138,7 @@ export function ChatInterface({ emergencyDetected, setEmergencyDetected }: ChatI
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Pet Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="select-pet-type">
                             <SelectValue placeholder="Select pet type" />
@@ -160,7 +161,7 @@ export function ChatInterface({ emergencyDetected, setEmergencyDetected }: ChatI
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Pet Age</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="select-pet-age">
                             <SelectValue placeholder="Select pet age" />
