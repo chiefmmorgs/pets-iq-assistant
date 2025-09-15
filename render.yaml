@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: pets-iq-app
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+    autoDeploy: false
+
+databases:
+  - name: pets-iq-db
+    plan: free
+    databaseName: pets_iq
