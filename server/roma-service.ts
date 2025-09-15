@@ -34,11 +34,15 @@ export async function generateROMAAdvice(
 
 async function callROMAPythonService(petType: string, petAge: string, symptoms: string, enhancedData?: EnhancedVetData): Promise<any> {
   try {
+    // First, try to get ML predictions from our FastAPI service
+    const mlPredictions = await callMLService(petType, symptoms);
+    
     // Prepare enhanced context for ROMA service
     const payload: any = {
       pet_type: petType,
       pet_age: petAge,
-      symptoms: symptoms
+      symptoms: symptoms,
+      ml_predictions: mlPredictions
     };
     
     // Add enhanced veterinary context if available
@@ -50,25 +54,177 @@ async function callROMAPythonService(petType: string, petAge: string, symptoms: 
       };
     }
     
-    // Try to call the Python ROMA service
-    const response = await fetch('http://localhost:8000/assess', {
+    // For now, use the ML predictions to enhance our local processing
+    // Later this could be expanded to call an actual external ROMA service
+    if (mlPredictions) {
+      return await generateEnhancedAdviceWithML(petType, petAge, symptoms, mlPredictions, enhancedData);
+    }
+    
+    return null;
+  } catch (error) {
+    console.log("Failed to connect to ROMA service:", error);
+    return null;
+  }
+}
+
+async function callMLService(petType: string, symptoms: string): Promise<any> {
+  try {
+    // Convert symptoms to array format
+    const symptomsArray = symptoms.toLowerCase().split(/[,\s]+/).filter(s => s.length > 2);
+    
+    const response = await fetch('http://localhost:8001/predict', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({
+        symptoms: symptomsArray,
+        pet_type: petType
+      })
     });
 
     if (response.ok) {
       return await response.json();
     } else {
-      console.log("ROMA service responded with error:", response.status);
+      console.log("ML service responded with error:", response.status);
       return null;
     }
   } catch (error) {
-    console.log("Failed to connect to ROMA service:", error);
+    console.log("Failed to connect to ML service:", error);
     return null;
   }
+}
+
+async function generateEnhancedAdviceWithML(
+  petType: string, 
+  petAge: string, 
+  symptoms: string, 
+  mlPredictions: any, 
+  enhancedData?: EnhancedVetData
+): Promise<any> {
+  const openaiApiKey = process.env.OPENAI_API_KEY;
+  
+  if (!openaiApiKey) {
+    console.log("OpenAI API key not available, using ML predictions only");
+    return generateMLBasedResponse(petType, petAge, symptoms, mlPredictions, enhancedData);
+  }
+
+  try {
+    // Use OpenAI to create empathetic, grounded responses based on ML predictions
+    const prompt = `You are a professional veterinary assistant. Based on the ML model predictions and clinical data provided, create a compassionate and helpful response for a pet owner.
+
+Pet Information:
+- Type: ${petType}
+- Age: ${petAge}
+- Symptoms: ${symptoms}
+
+ML Model Predictions:
+${JSON.stringify(mlPredictions, null, 2)}
+
+Enhanced Veterinary Data:
+${enhancedData ? JSON.stringify(enhancedData, null, 2) : 'None available'}
+
+Please provide a response in this exact JSON format:
+{
+  "triage": "emergency" | "see_vet_soon" | "ok",
+  "summary": "Brief, reassuring summary of the situation",
+  "advice": ["Step 1", "Step 2", "Step 3", "Step 4"],
+  "when_to_see_vet": "Clear guidance on when veterinary care is needed",
+  "disclaimer": "This information is for guidance only and is not a substitute for professional veterinary advice."
+}
+
+Guidelines:
+- Use the ML predictions as the foundation for your assessment
+- Be empathetic and reassuring while being medically accurate
+- Provide 4-6 specific, actionable steps
+- If ML predictions indicate high-risk diseases, set triage to "emergency" or "see_vet_soon"
+- Include breed-specific advice if available in enhanced data
+- Never contradict the ML model's disease predictions
+- Keep language simple and supportive for worried pet owners`;
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openaiApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+        max_tokens: 800
+      })
+    });
+
+    if (response.ok) {
+      const openaiResponse = await response.json();
+      const aiAdvice = JSON.parse(openaiResponse.choices[0].message.content);
+      
+      // Add ML prediction details for transparency
+      aiAdvice.ml_insights = {
+        top_predictions: mlPredictions.predictions?.slice(0, 2) || [],
+        confidence_level: mlPredictions.confidence_scores?.[0] || 0
+      };
+      
+      return aiAdvice;
+    } else {
+      console.log("OpenAI API error:", response.status);
+      return generateMLBasedResponse(petType, petAge, symptoms, mlPredictions, enhancedData);
+    }
+  } catch (error) {
+    console.log("OpenAI integration error:", error);
+    return generateMLBasedResponse(petType, petAge, symptoms, mlPredictions, enhancedData);
+  }
+}
+
+function generateMLBasedResponse(
+  petType: string, 
+  petAge: string, 
+  symptoms: string, 
+  mlPredictions: any, 
+  enhancedData?: EnhancedVetData
+): any {
+  // Fallback response using ML predictions
+  const topPrediction = mlPredictions.predictions?.[0];
+  const confidence = mlPredictions.confidence_scores?.[0] || 0;
+  
+  let triage: "emergency" | "see_vet_soon" | "ok" = "ok";
+  if (topPrediction?.urgency === "emergency" || confidence > 0.8) {
+    triage = "emergency";
+  } else if (topPrediction?.urgency === "moderate" || confidence > 0.5) {
+    triage = "see_vet_soon";
+  }
+  
+  const summary = topPrediction 
+    ? `Based on the symptoms, your ${petType} may have ${topPrediction.disease} (${Math.round(confidence * 100)}% confidence).`
+    : `Your ${petType}'s symptoms require careful monitoring and assessment.`;
+  
+  const advice = mlPredictions.recommended_actions || [
+    "Monitor your pet closely for any changes",
+    "Ensure fresh water is available",
+    "Keep your pet comfortable and calm",
+    "Document any new symptoms"
+  ];
+  
+  return {
+    triage,
+    summary,
+    advice,
+    when_to_see_vet: triage === "emergency" 
+      ? "Seek immediate veterinary care" 
+      : "Contact your veterinarian if symptoms persist or worsen",
+    disclaimer: "This information is for guidance only and is not a substitute for professional veterinary advice.",
+    ml_insights: {
+      top_predictions: mlPredictions.predictions || [],
+      confidence_level: confidence
+    }
+  };
 }
 
 function generateLocalAdvice(petType: string, petAge: string, symptoms: string, enhancedData?: EnhancedVetData): TriageResponse {
