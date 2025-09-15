@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { petAssessmentSchema } from "@shared/schema";
 import { generateROMAAdvice } from "./roma-service";
 import { integrateVetDataHub, getEnhancedTriageData } from "./vetdatahub-integration";
+import { processTelegramUpdate } from "./telegram-bot";
 
 export function registerRoutes(app: Express): Server {
   // Pet assessment endpoint
@@ -116,6 +117,31 @@ export function registerRoutes(app: Express): Server {
       console.error("Enhanced triage data error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
+  });
+
+  // Telegram Bot Webhook Endpoint
+  app.post("/api/telegram/webhook", async (req, res) => {
+    try {
+      console.log('📱 Telegram webhook received:', JSON.stringify(req.body, null, 2));
+      
+      // Process the Telegram update
+      await processTelegramUpdate(req.body);
+      
+      // Telegram expects a 200 OK response
+      res.status(200).json({ ok: true });
+    } catch (error) {
+      console.error("❌ Telegram webhook error:", error);
+      res.status(500).json({ error: "Webhook processing failed" });
+    }
+  });
+
+  // Health check endpoint for Telegram bot
+  app.get("/api/telegram/status", (req, res) => {
+    res.json({ 
+      status: "Pets IQ Telegram Bot Active",
+      timestamp: new Date().toISOString(),
+      botEnabled: !!process.env.TELEGRAM_BOT_TOKEN
+    });
   });
 
   const httpServer = createServer(app);
