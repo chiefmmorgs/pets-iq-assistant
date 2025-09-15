@@ -1,0 +1,168 @@
+Backend must run on port 8000, expose /health and /diagnose, talk to a local ROMA service on 8001, allow CORS for the frontend, and the frontend must read VITE_API_URL for all API calls.
+
+Python env and deps
+Create requirements.txt with exactly:
+fastapi
+uvicorn
+python-dotenv
+requests
+
+If pyproject.toml already declares deps, keep it, but ensure these four packages are installed too.
+
+Backend app
+Create backend/main.py with this content:
+
+import os
+import requests
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+
+load_dotenv()
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+ROMA_HOST = os.getenv("ROMA_HOST", "127.0.0.1")
+ROMA_PORT = int(os.getenv("ROMA_PORT", "8001"))
+
+app = FastAPI()
+
+app.add_middleware(
+CORSMiddleware,
+allow_origins=[""],
+allow_methods=[""],
+allow_headers=["*"],
+)
+
+@app.get("/health")
+def health():
+return {"ok": True}
+
+@app.get("/roma/health")
+def roma_health():
+try:
+r = requests.get(f"http://{ROMA_HOST}:{ROMA_PORT}/health", timeout=2)
+return {"ok": r.status_code == 200, "status": r.text}
+except Exception as e:
+return {"ok": False, "error": str(e)}
+
+@app.post("/diagnose")
+def diagnose(payload: dict):
+if not OPENAI_API_KEY:
+raise HTTPException(status_code=500, detail="Missing OPENAI_API_KEY")
+# If ROMA is required, ping it before proceeding
+try:
+requests.get(f"http://{ROMA_HOST}:{ROMA_PORT}/health", timeout=1)
+except Exception:
+raise HTTPException(status_code=502, detail="ROMA service not reachable")
+# Placeholder logic. Echo back the request for now.
+return {"diagnosis": "placeholder", "input": payload}
+
+Backend runner
+Add a run script to start the API.
+
+If the project uses a Procfile, create Procfile with:
+web: uvicorn backend.main:app --host 0.0.0.0 --port 8000
+
+Also add a Replit Nix or Poetry runner as needed, but ensure the run command is:
+uvicorn backend.main:app --host 0.0.0.0 --port 8000
+
+ROMA service launcher
+If start_roma_service.py exists, keep it. If not, add a minimal placeholder so health checks work.
+
+Create roma/server.py with:
+
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/health")
+def health():
+return {"ok": True}
+
+Add a second Procfile entry for local dev only, or a comment in README. Do not run this in the same process as the main backend. Local dev command:
+uvicorn roma.server:app --host 0.0.0.0 --port 8001
+
+Environment files
+Create .env.example with:
+
+OPENAI_API_KEY=
+VITE_API_URL=http://localhost:8000
+
+ROMA_HOST=127.0.0.1
+ROMA_PORT=8001
+SENTIENT_API_KEY=
+
+Do not commit secrets. If Replit supports Secrets, map these keys there. Also create .env for local use if this is a private repl.
+
+Frontend API base URL
+Find the frontend API client. Search for fetch, axios, or baseURL. Replace any hardcoded paths or dev proxies with VITE_API_URL.
+
+Create or edit src/lib/api.ts (or the existing client file) to this shape:
+
+const BASE = import.meta.env.VITE_API_URL || "http://localhost:8000
+";
+
+export async function api(path: string, options: RequestInit = {}) {
+const res = await fetch(${BASE}${path}, {
+headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+...options,
+});
+if (!res.ok) {
+const text = await res.text();
+throw new Error(HTTP ${res.status} ${text});
+}
+return res.json();
+}
+
+Usage examples in the app must call:
+api("/health")
+api("/diagnose", { method: "POST", body: JSON.stringify(data) })
+
+Remove or disable any Vite proxy that remaps /api if present. We will call the backend with a full base URL.
+
+Route alignment
+Ensure the frontend calls exactly these backend paths:
+/health GET
+/diagnose POST
+If the UI previously used /api/diagnose, update it to /diagnose. Do a project-wide replace of “/api/diagnose” to “/diagnose” and “/api/health” to “/health”.
+
+CORS
+Already enabled in backend/main.py. No extra work needed on the frontend.
+
+Dev scripts
+Add these npm scripts in frontend package.json if present:
+"dev": "vite",
+"build": "vite build",
+"preview": "vite preview --port 5173"
+
+README quick start
+Update README.md top section with:
+
+Local dev
+
+Create .env from .env.example and fill OPENAI_API_KEY
+
+Start ROMA mock
+uvicorn roma.server:app --host 0.0.0.0 --port 8001
+
+Start backend
+uvicorn backend.main:app --host 0.0.0.0 --port 8000
+Test: curl http://localhost:8000/health
+
+Start frontend
+npm i
+npm run dev
+Ensure VITE_API_URL=http://localhost:8000
+
+Troubleshooting
+lsof -i :8000
+lsof -i :8001
+curl -i http://localhost:8001/health
+
+curl -i http://localhost:8000/health
+
+curl -i -X POST http://localhost:8000/diagnose
+ -H "Content-Type: application/json" -d '{"pet":"Dog","issue":"vomiting"}'
+
+Commit and run
+Save all changes. Install Python deps. Start ROMA on 8001. Start backend on 8000. Start frontend. Confirm the app uses VITE_API_URL and calls succeed.
