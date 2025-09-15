@@ -1,42 +1,62 @@
 import { triageResponseSchema, type TriageResponse } from "@shared/schema";
 import { spawn } from "child_process";
 
+// Type for enhanced veterinary data from VetDataHub
+type EnhancedVetData = {
+  breedInfo: any | null;
+  symptomPatterns: any[];
+  knowledgeBase: any[];
+} | null;
+
 // ROMA-powered advice generation service
 export async function generateROMAAdvice(
   petType: string,
   petAge: string,
-  symptoms: string
+  symptoms: string,
+  enhancedData?: EnhancedVetData
 ): Promise<TriageResponse> {
   try {
-    // Call our Python ROMA service
-    const romaResponse = await callROMAPythonService(petType, petAge, symptoms);
+    // Call our Python ROMA service with enhanced context
+    const romaResponse = await callROMAPythonService(petType, petAge, symptoms, enhancedData);
     
     if (romaResponse) {
       return triageResponseSchema.parse(romaResponse);
     }
     
     // Fallback to local processing if ROMA service is unavailable
-    console.log("ROMA service unavailable, using local processing");
-    return generateLocalAdvice(petType, petAge, symptoms);
+    console.log("ROMA service unavailable, using local processing with enhanced data");
+    return generateLocalAdvice(petType, petAge, symptoms, enhancedData);
   } catch (error) {
     console.error("ROMA service error:", error);
-    return generateLocalAdvice(petType, petAge, symptoms);
+    return generateLocalAdvice(petType, petAge, symptoms, enhancedData);
   }
 }
 
-async function callROMAPythonService(petType: string, petAge: string, symptoms: string): Promise<any> {
+async function callROMAPythonService(petType: string, petAge: string, symptoms: string, enhancedData?: EnhancedVetData): Promise<any> {
   try {
+    // Prepare enhanced context for ROMA service
+    const payload: any = {
+      pet_type: petType,
+      pet_age: petAge,
+      symptoms: symptoms
+    };
+    
+    // Add enhanced veterinary context if available
+    if (enhancedData) {
+      payload.enhanced_context = {
+        breed_info: enhancedData.breedInfo,
+        symptom_patterns: enhancedData.symptomPatterns,
+        knowledge_base: enhancedData.knowledgeBase
+      };
+    }
+    
     // Try to call the Python ROMA service
     const response = await fetch('http://localhost:8000/assess', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        pet_type: petType,
-        pet_age: petAge,
-        symptoms: symptoms
-      })
+      body: JSON.stringify(payload)
     });
 
     if (response.ok) {
@@ -51,7 +71,7 @@ async function callROMAPythonService(petType: string, petAge: string, symptoms: 
   }
 }
 
-function generateLocalAdvice(petType: string, petAge: string, symptoms: string): TriageResponse {
+function generateLocalAdvice(petType: string, petAge: string, symptoms: string, enhancedData?: EnhancedVetData): TriageResponse {
   // Local fallback processing
   const lowerSymptoms = symptoms.toLowerCase();
     
@@ -86,10 +106,42 @@ function generateLocalAdvice(petType: string, petAge: string, symptoms: string):
       }
     }
 
-    // Generate contextual advice based on pet type, age, and symptoms
+    // Generate contextual advice based on pet type, age, symptoms, and enhanced VetDataHub data
     let advice: string[] = [];
     let when_to_see_vet = "";
     let summary = "";
+
+    // Check for enhanced VetDataHub insights first
+    let enhancedAdvice: string[] = [];
+    if (enhancedData) {
+      // Add breed-specific insights
+      if (enhancedData.breedInfo) {
+        const breedConditions = enhancedData.breedInfo.commonConditions || [];
+        if (breedConditions.length > 0) {
+          enhancedAdvice.push(`🧬 ${enhancedData.breedInfo.breed}s are prone to: ${breedConditions.join(', ')}`);
+        }
+        if (enhancedData.breedInfo.vetAdvice) {
+          enhancedAdvice.push(`📋 Breed-specific note: ${enhancedData.breedInfo.vetAdvice}`);
+        }
+      }
+
+      // Add symptom pattern insights
+      for (const pattern of enhancedData.symptomPatterns || []) {
+        if (pattern.triageAdvice) {
+          enhancedAdvice.push(`⚕️ ${pattern.triageAdvice}`);
+        }
+        if (pattern.severity === 'emergency' && triage !== 'emergency') {
+          triage = 'emergency'; // Upgrade triage based on VetDataHub data
+        }
+      }
+
+      // Add relevant knowledge base insights
+      for (const knowledge of enhancedData.knowledgeBase?.slice(0, 2) || []) {
+        if (knowledge.content?.treatment) {
+          enhancedAdvice.push(`💡 Treatment insight: ${knowledge.content.treatment}`);
+        }
+      }
+    }
 
     if (triage === "emergency") {
       summary = "Emergency situation detected requiring immediate veterinary attention.";
@@ -131,6 +183,11 @@ function generateLocalAdvice(petType: string, petAge: string, symptoms: string):
         "Document symptoms with photos/videos if possible"
       ];
       when_to_see_vet = "See a vet if symptoms persist beyond 24-48 hours or worsen";
+    }
+
+    // Append enhanced VetDataHub insights to advice
+    if (enhancedAdvice.length > 0) {
+      advice = [...advice, ...enhancedAdvice];
     }
 
     const response: TriageResponse = {
