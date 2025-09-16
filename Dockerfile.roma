@@ -1,0 +1,24 @@
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PORT=8001
+
+WORKDIR /roma
+
+# system deps
+RUN apt-get update && apt-get install -y --no-install-recommends git wget && rm -rf /var/lib/apt/lists/*
+
+# pull ROMA at build time
+RUN git clone https://github.com/sentient-agi/ROMA.git ./
+
+# install python deps
+# prefer uv if repo supports; else pip
+RUN pip install --upgrade pip && \
+    if [ -f requirements.txt ]; then pip install -r requirements.txt; fi && \
+    if [ -f pyproject.toml ]; then pip install .; fi
+
+EXPOSE 8001
+
+# change module path if ROMA exposes a different app path
+CMD ["python", "-m", "uvicorn", "roma.server:app", "--host", "0.0.0.0", "--port", "8001"]

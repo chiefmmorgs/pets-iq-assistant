@@ -1,0 +1,18 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# install deps
+COPY package*.json ./
+RUN npm ci --omit=dev
+
+# copy source
+COPY . .
+
+ENV NODE_ENV=production
+ENV PORT=8000
+
+EXPOSE 8000
+
+# adjust if your start script is different
+CMD ["npm", "start"]

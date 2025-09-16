@@ -94,7 +94,8 @@ export function registerRoutes(app: Express): Server {
           romaAnalysis = romaResult;
         }
       } catch (romaError) {
-        console.log("Roma agent not available:", romaError.message);
+        const errorMessage = romaError instanceof Error ? romaError.message : String(romaError);
+        console.log("Roma agent not available:", errorMessage);
       }
       
       // Get structured AI response with knowledge base context

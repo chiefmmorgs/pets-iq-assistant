@@ -1,10 +1,36 @@
 import axios from "axios";
-const BASE = process.env.ROMA_URL || "http://localhost:8000";
 
+const ROMA_HOST = process.env.ROMA_HOST || "roma";
+const ROMA_PORT = process.env.ROMA_PORT || 8001;
+const BASE = `http://${ROMA_HOST}:${ROMA_PORT}`;
+
+export async function health() {
+  try {
+    const r = await axios.get(`${BASE}/health`, { timeout: 2000 });
+    return r.data;
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+}
+
+export async function reason(messages) {
+  try {
+    const r = await axios.post(`${BASE}/reason`, { messages }, { timeout: 15000 });
+    return r.data;
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+}
+
+// Legacy function for backward compatibility
 export async function askRoma(input) {
   try {
-    const { data } = await axios.post(`${BASE}/api/infer`, { input });
-    return data;
+    // Convert input to messages format for ROMA
+    const messages = [
+      { role: "system", content: "You are a veterinary reasoning agent." },
+      { role: "user", content: input }
+    ];
+    return await reason(messages);
   } catch (e) {
     return { ok: false, error: e.message };
   }
