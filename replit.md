@@ -1,8 +1,8 @@
-# Pets IQ Bot - AI Veterinary Assistant
+# Pets IQ Bot
 
 ## Overview
 
-Pets IQ Bot is a full-stack web application that provides AI-powered veterinary guidance for pet owners. The application allows users to describe their pet's symptoms and receive triage recommendations, ranging from general care advice to emergency veterinary referrals. The system uses keyword-based symptom analysis to classify pet health issues and provide appropriate guidance while emphasizing the importance of professional veterinary care for serious conditions.
+Pets IQ Bot is an advanced AI-powered veterinary assistant that provides professional-grade pet health assessments. The application combines multiple intelligence sources including ROMA (Real-time Optimized Multi-Agent) reasoning, OpenAI GPT-3.5-turbo, knowledge-based signal analysis, and machine learning classification to deliver comprehensive pet care guidance with evidence-based triage recommendations.
 
 ## User Preferences
 
@@ -11,62 +11,63 @@ Preferred communication style: Simple, everyday language.
 ## System Architecture
 
 ### Frontend Architecture
-- **Framework**: React 18 with TypeScript and Vite for fast development and building
+- **Framework**: React with TypeScript using Vite for build tooling
+- **UI Library**: shadcn/ui components with Radix UI primitives for accessibility
+- **Styling**: Tailwind CSS with custom design system using CSS variables
+- **State Management**: React Hook Form for form handling, TanStack Query for server state
 - **Routing**: Wouter for lightweight client-side routing
-- **Styling**: Tailwind CSS with a dark theme design system using CSS variables
-- **UI Components**: Comprehensive component library built on Radix UI primitives with shadcn/ui styling
-- **State Management**: TanStack Query (React Query) for server state management and caching
-- **Forms**: React Hook Form with Zod validation for type-safe form handling
-- **Design System**: Custom theme with pet-friendly branding, gradient borders, and responsive layout
+- **Layout**: Responsive design with header, main content area, sidebar, and footer
 
 ### Backend Architecture
-- **Runtime**: Node.js with Express.js for the REST API server
-- **Language**: TypeScript with ES modules
+- **Runtime**: Node.js with Express.js framework
 - **API Design**: RESTful endpoints with structured JSON responses
-- **Request Handling**: Express middleware for logging, JSON parsing, and error handling
-- **Triage Logic**: Rule-based symptom classification using keyword matching for emergency detection
-- **Development**: Vite integration for hot module replacement in development mode
+- **Request Validation**: Zod schemas for type-safe request/response validation
+- **Error Handling**: Centralized error handling with appropriate HTTP status codes
+- **Rate Limiting**: Express-rate-limit for API protection
+- **Security**: Helmet for security headers, CORS configuration
+
+### Multi-Intelligence Assessment System
+- **ROMA Integration**: External reasoning agent service running on separate FastAPI container
+- **Knowledge Base Engine**: JSON-based symptom database with weighted signal analysis
+- **OpenAI Integration**: GPT-3.5-turbo with JSON schema enforcement for structured responses
+- **ML Classification**: Natural language processing for symptom pattern recognition
+- **Confidence Scoring**: Weighted assessment based on signal presence and strength
 
 ### Data Storage Solutions
-- **Database ORM**: Drizzle ORM configured for PostgreSQL with type-safe database operations
-- **Schema Management**: Centralized schema definitions with Zod integration for validation
-- **Migration System**: Drizzle Kit for database migrations and schema synchronization
-- **Development Storage**: In-memory storage implementation for development and testing
-- **Production Database**: PostgreSQL via Neon Database serverless platform
+- **Primary Database**: PostgreSQL with Drizzle ORM for type-safe database operations
+- **Knowledge Base**: JSON files for veterinary signals and triage mappings
+- **ML Models**: Serialized classifier models stored as JSON
+- **Static Assets**: File system storage for images and configuration
 
-### Authentication and Authorization
-The current implementation does not include user authentication, operating as a public advisory tool. All interactions are stateless, focusing on immediate pet health guidance rather than user account management.
-
-### Triage and Assessment System
-- **Symptom Classification**: Three-tier triage system (emergency, see_vet_soon, ok) based on keyword analysis
-- **Emergency Detection**: Immediate escalation for critical symptoms like bleeding, choking, or breathing difficulties
-- **Response Format**: Structured JSON responses with triage level, summary, advice steps, and disclaimers
-- **Safety Measures**: Conservative approach that escalates uncertain cases to professional veterinary care
+### Triage System
+- **Emergency**: Immediate veterinary care required (red flags detected)
+- **Urgent**: Veterinary visit needed within 24-48 hours
+- **Home Care**: Monitoring and home treatment recommendations
 
 ## External Dependencies
 
-### Core Technologies
-- **Database**: PostgreSQL through Neon Database serverless platform
-- **Database Driver**: `@neondatabase/serverless` for connection pooling and serverless compatibility
-- **ORM**: Drizzle ORM with PostgreSQL dialect for type-safe database operations
-- **Validation**: Zod for runtime type checking and schema validation
+### AI Services
+- **OpenAI API**: GPT-3.5-turbo for natural language processing and structured assessment generation
+- **ROMA Agent**: External GitHub repository integration (sentient-agi/ROMA) for advanced veterinary reasoning
 
-### UI and Styling
-- **Component Library**: Radix UI primitives for accessible, unstyled components
-- **Styling Framework**: Tailwind CSS for utility-first styling with custom design tokens
-- **Icons**: Lucide React for consistent iconography
-- **Animations**: CSS-based animations with Tailwind animation utilities
+### Database & Infrastructure
+- **Neon Database**: PostgreSQL hosting via @neondatabase/serverless
+- **Drizzle ORM**: Type-safe database operations and migrations
+- **Vercel**: Deployment platform with serverless functions
 
-### Development and Build Tools
-- **Build Tool**: Vite for fast development server and optimized production builds
-- **Development Environment**: Replit integration with runtime error overlay and cartographer plugin
-- **Code Quality**: TypeScript for static type checking and enhanced developer experience
-- **Package Management**: npm with lockfile for dependency consistency
+### Development & Build Tools
+- **Vite**: Frontend build tool with React plugin support
+- **TypeScript**: Type safety across frontend and backend
+- **ESBuild**: Backend bundling for production builds
+- **Tailwind CSS**: Utility-first CSS framework
 
-### Frontend Libraries
-- **HTTP Client**: Fetch API with custom wrapper for API requests and error handling
-- **Date Handling**: date-fns for date manipulation and formatting
-- **Carousel**: Embla Carousel for image/content carousels
-- **Command Interface**: CMDK for command palette and search functionality
+### Third-Party Libraries
+- **Natural**: Node.js natural language processing for ML classification
+- **Axios**: HTTP client for external API communication
+- **Express Middleware**: Helmet, CORS, Morgan, Rate Limiting
+- **UI Components**: Radix UI primitives, Lucide React icons
+- **Form Handling**: React Hook Form with Zod resolvers
 
-The application follows a modern full-stack architecture with clear separation of concerns, type safety throughout the stack, and a focus on providing reliable pet health guidance while maintaining appropriate safety boundaries.
+### Containerization
+- **Docker**: Multi-container setup with separate services for API and ROMA agent
+- **Docker Compose**: Service orchestration with health checks and dependency management
