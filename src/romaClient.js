@@ -15,8 +15,15 @@ export async function health() {
 
 export async function reason(messages) {
   try {
-    const r = await axios.post(`${BASE}/reason`, { messages }, { timeout: 15000 });
-    return r.data;
+    // Try different possible ROMA endpoints
+    let response;
+    try {
+      response = await axios.post(`${BASE}/reason`, { messages }, { timeout: 15000 });
+    } catch (firstError) {
+      // Fallback to alternative endpoint patterns
+      response = await axios.post(`${BASE}/api/reason`, { messages }, { timeout: 15000 });
+    }
+    return response.data;
   } catch (e) {
     return { ok: false, error: e.message };
   }

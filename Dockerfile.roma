@@ -20,5 +20,5 @@ RUN pip install --upgrade pip && \
 
 EXPOSE 8001
 
-# change module path if ROMA exposes a different app path
-CMD ["python", "-m", "uvicorn", "roma.server:app", "--host", "0.0.0.0", "--port", "8001"]
+# Run ROMA FastAPI server from root directory
+CMD ["python", "-m", "uvicorn", "fastapi_server:app", "--host", "0.0.0.0", "--port", "8001"]
