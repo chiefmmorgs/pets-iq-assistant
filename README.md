@@ -13,6 +13,7 @@ Pets IQ Bot is a comprehensive web application that provides professional-grade 
 - **Evidence-Based Triage**: Conservative escalation with red flag detection
 - **JSON Schema Enforcement**: Consistent, structured responses with differential diagnoses
 - **Professional UI**: Rich assessment displays with signal presence indicators
+- **Brand-Free Interface**: Clean, professional interface with no third-party branding
 
 ## 🧠 Intelligence Sources
 
@@ -54,7 +55,7 @@ Pets IQ Bot is a comprehensive web application that provides professional-grade 
 - **Action**: Monitor at home with supportive care
 - **Confidence**: Low-weight signals or insufficient evidence
 
-## 🐳 Docker Deployment
+## 🐳 Docker Deployment (Recommended)
 
 ### Container Architecture
 ```yaml
@@ -138,6 +139,7 @@ curl http://localhost:8001/health
 - **Real-time Analysis**: Fast symptom processing and response
 - **Chat Interface**: Natural conversation flow
 - **Emergency Alerts**: Prominent warnings for urgent cases
+- **Clean Interface**: Professional design with no external branding
 
 ## 🔧 Technical Architecture
 
@@ -170,7 +172,7 @@ curl http://localhost:8001/health
 ### Database & Storage
 - **ORM**: Drizzle ORM with PostgreSQL support
 - **Development**: In-memory storage for fast iteration
-- **Production**: Neon Database serverless PostgreSQL
+- **Production**: PostgreSQL with connection pooling
 - **Schema**: Type-safe database operations
 
 ## 🚀 Getting Started
@@ -185,15 +187,17 @@ cd pets-iq-assistant
 npm install
 
 # Set up environment variables
-echo "OPENAI_API_KEY=your-key-here" > .env
-echo "ROMA_HOST=localhost" >> .env
-echo "ROMA_PORT=8001" >> .env
+cp .env.example .env
+# Edit .env with your API keys:
+# OPENAI_API_KEY=your-openai-key
+# ROMA_HOST=localhost
+# ROMA_PORT=8001
 
 # Start the application
 npm run dev
 ```
 
-### Docker Production Setup
+### Production Deployment with Docker
 ```bash
 # Build and deploy with ROMA integration
 docker compose up -d --build
@@ -203,7 +207,13 @@ docker compose ps
 docker compose logs -f
 ```
 
-The application will be available at `http://localhost:8000` (Docker) or `http://localhost:5000` (development)
+### Cloud Deployment Options
+The application can be deployed to any cloud platform that supports:
+- **Docker containers** (AWS ECS, Google Cloud Run, Azure Container Instances)
+- **Node.js applications** (Heroku, Vercel, Netlify, Railway, Render)
+- **Static hosting + API** (Cloudflare Pages, AWS S3 + Lambda)
+
+The application will be available at the configured port (default: 8000 for Docker, 5000 for development)
 
 ## 📁 Project Structure
 
@@ -223,8 +233,6 @@ pets-iq-assistant/
 │   ├── openaiChat.js      # GPT-3.5-turbo integration
 │   ├── romaClient.js      # ROMA service integration
 │   └── ml.js              # Machine learning classifier
-├── services/              # External service integrations
-│   └── roma.js           # ROMA service client (CommonJS)
 ├── utils/                 # Shared utilities
 │   ├── symptoms.js        # Symptom analysis and matching
 │   └── format.js          # Response formatting
@@ -319,6 +327,7 @@ const assessment = await fetch('/api/chat', {
 - **Gradient Borders**: Modern glass-morphism effects
 - **Responsive Layout**: Optimized for desktop and mobile
 - **Dark Mode Support**: Comprehensive theming system
+- **Professional Interface**: Clean design without external branding
 
 ### Interaction Design
 - **Chat Interface**: Natural conversation flow
@@ -327,10 +336,10 @@ const assessment = await fetch('/api/chat', {
 - **Error Handling**: Graceful failure with helpful messages
 
 ### Branding & Attribution
-- **Logo Integration**: Custom branding in bottom-right corner
-- **Social Links**: GitHub repository and X profile links
+- **Custom Branding**: Personal logo integration
+- **Social Links**: GitHub repository and developer profile links
 - **Professional Footer**: Contact and legal information
-- **ROMA Attribution**: Clear credit to sentient-agi/ROMA project
+- **Independent Identity**: No third-party platform branding
 
 ## ⚠️ Important Disclaimers
 
@@ -360,7 +369,7 @@ const assessment = await fetch('/api/chat', {
 1. Build containers: `docker compose build`
 2. Start services: `docker compose up -d`
 3. Monitor logs: `docker compose logs -f`
-4. Test endpoints: `curl` commands above
+4. Test endpoints: Use curl commands above
 
 ### Code Standards
 - TypeScript for type safety
