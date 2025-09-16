@@ -1,12 +1,14 @@
 # Pets IQ Bot 🐕🐱
 
-**Advanced AI-Powered Veterinary Assistant with Multi-Source Intelligence**
+**Advanced AI-Powered Veterinary Assistant with ROMA Integration**
 
-Pets IQ Bot is a comprehensive web application that provides professional-grade pet health assessments using multiple AI sources, structured signal analysis, and evidence-based triage recommendations. The system combines machine learning, expert knowledge bases, and GPT-3.5-turbo to deliver reliable veterinary guidance for pet owners.
+Pets IQ Bot is a comprehensive web application that provides professional-grade pet health assessments using multiple AI sources, structured signal analysis, and evidence-based triage recommendations. The system combines machine learning, expert knowledge bases, GPT-3.5-turbo, and ROMA reasoning agents to deliver reliable veterinary guidance for pet owners.
 
 ## 🌟 What Makes It Special?
 
+- **ROMA Integration**: Real-time connection to https://github.com/sentient-agi/ROMA for advanced veterinary reasoning
 - **Multi-Source Assessment**: Combines knowledge base signals, OpenAI GPT-3.5-turbo, Roma agent analysis, and ML classification
+- **Docker Containerization**: Complete containerized setup with ROMA FastAPI service and Node.js API
 - **Structured Signal Analysis**: Precise symptom detection with weighted confidence scoring
 - **Evidence-Based Triage**: Conservative escalation with red flag detection
 - **JSON Schema Enforcement**: Consistent, structured responses with differential diagnoses
@@ -14,20 +16,22 @@ Pets IQ Bot is a comprehensive web application that provides professional-grade 
 
 ## 🧠 Intelligence Sources
 
-### 1. **Knowledge Base Engine**
+### 1. **ROMA Reasoning Agent**
+- **Integration**: Direct connection to sentient-agi/ROMA repository
+- **Veterinary Reasoning**: Advanced AI reasoning for complex symptom analysis
+- **Docker Service**: Runs as separate FastAPI container for optimal performance
+- **Health Monitoring**: Built-in health checks and graceful fallback
+
+### 2. **Knowledge Base Engine**
 - **Weighted Signals**: 200+ veterinary symptoms with severity weights (1-10)
 - **Differential Diagnoses**: Multiple possible conditions with reasoning
 - **Red Flag Detection**: Automatic escalation for emergency symptoms
 - **Synonym Matching**: "not eating" → "loss of appetite", "low energy" → "lethargy"
 
-### 2. **OpenAI GPT-3.5-turbo Integration**
+### 3. **OpenAI GPT-3.5-turbo Integration**
 - **JSON Schema Enforcement**: Structured responses with validation
 - **Empathetic Messaging**: Natural language explanations under 150 characters
 - **Conservative Triage**: Safety-first approach to recommendations
-
-### 3. **Roma Agent Analysis**
-- **Additional Intelligence**: Supplementary veterinary insights
-- **Graceful Degradation**: System continues without Roma if unavailable
 
 ### 4. **Machine Learning Classification**
 - **Symptom Pattern Recognition**: Trained model for condition classification
@@ -49,6 +53,44 @@ Pets IQ Bot is a comprehensive web application that provides professional-grade 
 - **Indicators**: Minor symptoms, single isolated signs
 - **Action**: Monitor at home with supportive care
 - **Confidence**: Low-weight signals or insufficient evidence
+
+## 🐳 Docker Deployment
+
+### Container Architecture
+```yaml
+# docker-compose.yml
+services:
+  roma:
+    # ROMA FastAPI service on port 8001
+    image: pets-iq-roma
+    healthcheck: /health endpoint monitoring
+    
+  api:
+    # Node.js Express API on port 8000
+    image: pets-iq-api
+    depends_on: roma service health
+    environment: ROMA_HOST=roma, ROMA_PORT=8001
+```
+
+### Quick Docker Setup
+```bash
+# Build and start services
+docker compose up -d --build
+
+# Monitor logs
+docker compose logs -f api
+docker compose logs -f roma
+
+# Health checks
+curl http://localhost:8000/health
+curl http://localhost:8001/health
+```
+
+### ROMA Integration Details
+- **Repository**: Cloned from https://github.com/sentient-agi/ROMA at build time
+- **Communication**: Internal Docker network (roma:8001)
+- **Endpoints**: `/health` for monitoring, `/reason` for analysis
+- **Fallback**: Graceful degradation when ROMA service unavailable
 
 ## 📊 Assessment Response Format
 
@@ -73,13 +115,18 @@ Pets IQ Bot is a comprehensive web application that provides professional-grade 
     "provide fresh water frequently",
     "monitor hydration status"
   ],
-  "confidence": 0.72
+  "confidence": 0.72,
+  "roma_analysis": {
+    "reasoning": "ROMA agent insights...",
+    "confidence": 0.85
+  }
 }
 ```
 
 ## 🖥️ User Interface Features
 
 ### Enhanced Assessment Display
+- **ROMA Insights**: Real-time reasoning from ROMA agent
 - **Signal Analysis**: Visual indicators for present/absent symptoms
 - **Differential Diagnoses**: Multiple possible conditions with explanations  
 - **Confidence Scoring**: Numerical confidence based on weighted signals
@@ -93,6 +140,12 @@ Pets IQ Bot is a comprehensive web application that provides professional-grade 
 - **Emergency Alerts**: Prominent warnings for urgent cases
 
 ## 🔧 Technical Architecture
+
+### Container Services
+- **ROMA Service**: FastAPI container running sentient-agi/ROMA
+- **API Service**: Node.js Express application
+- **Health Monitoring**: Automated health checks and service dependencies
+- **Network Isolation**: Secure internal container communication
 
 ### Frontend (React + TypeScript)
 - **Framework**: React 18 with Vite for fast development
@@ -109,9 +162,9 @@ Pets IQ Bot is a comprehensive web application that provides professional-grade 
 - **Error Handling**: Graceful degradation and fallbacks
 
 ### AI Integration
+- **ROMA Agent**: Direct integration with sentient-agi/ROMA service
 - **OpenAI**: GPT-3.5-turbo with JSON schema enforcement
 - **Knowledge Base**: Structured veterinary signal database
-- **Roma Agent**: External veterinary intelligence service
 - **ML Classification**: Custom-trained symptom classifier
 
 ### Database & Storage
@@ -122,26 +175,35 @@ Pets IQ Bot is a comprehensive web application that provides professional-grade 
 
 ## 🚀 Getting Started
 
-### Prerequisites
-- Node.js 18+ installed
-- OpenAI API key for full AI responses
-
-### Quick Start
+### Development Setup
 ```bash
 # Clone the repository
 git clone https://github.com/chiefmmorgs/pets-iq-assistant
+cd pets-iq-assistant
 
 # Install dependencies  
 npm install
 
 # Set up environment variables
 echo "OPENAI_API_KEY=your-key-here" > .env
+echo "ROMA_HOST=localhost" >> .env
+echo "ROMA_PORT=8001" >> .env
 
 # Start the application
 npm run dev
 ```
 
-The application will be available at `http://localhost:5000`
+### Docker Production Setup
+```bash
+# Build and deploy with ROMA integration
+docker compose up -d --build
+
+# Monitor services
+docker compose ps
+docker compose logs -f
+```
+
+The application will be available at `http://localhost:8000` (Docker) or `http://localhost:5000` (development)
 
 ## 📁 Project Structure
 
@@ -159,7 +221,10 @@ pets-iq-assistant/
 ├── src/                   # AI and assessment logic
 │   ├── knowledgeBase.js   # Veterinary knowledge engine
 │   ├── openaiChat.js      # GPT-3.5-turbo integration
+│   ├── romaClient.js      # ROMA service integration
 │   └── ml.js              # Machine learning classifier
+├── services/              # External service integrations
+│   └── roma.js           # ROMA service client (CommonJS)
 ├── utils/                 # Shared utilities
 │   ├── symptoms.js        # Symptom analysis and matching
 │   └── format.js          # Response formatting
@@ -167,20 +232,48 @@ pets-iq-assistant/
 │   └── signals.json       # Veterinary signals database
 ├── shared/                # Shared TypeScript schemas
 │   └── schema.ts          # Request/response types
+├── docker-compose.yml     # Container orchestration
+├── Dockerfile.api         # Node.js API container
+├── Dockerfile.roma        # ROMA service container
 └── README.md              # This documentation
 ```
 
 ## 🔌 API Endpoints
 
 ### Assessment Endpoints
-- `POST /api/chat` - Complete AI assessment with structured analysis
+- `POST /api/chat` - Complete AI assessment with ROMA integration
 - `POST /api/predict` - Quick symptom classification and triage
-- `GET /api/health` - System health check
+- `POST /api/roma` - Direct ROMA agent proxy
+- `GET /api/health` - System health with service status
+- `GET /health` - Simple health check for Docker
 
-### Request Format
+### Container Health Checks
+```bash
+# API service health
+curl http://localhost:8000/health
+
+# ROMA service health  
+curl http://localhost:8001/health
+
+# Complete assessment test
+curl -X POST http://localhost:8000/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"text":"dog vomiting, not eating","species":"dog","age":"adult"}'
+```
+
+### ROMA Integration Examples
 ```javascript
-// Complete assessment
-fetch('/api/chat', {
+// Direct ROMA reasoning
+const romaResponse = await fetch('/api/roma', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    text: "My cat is limping and seems in pain"
+  })
+});
+
+// Full assessment with ROMA insights
+const assessment = await fetch('/api/chat', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -188,17 +281,17 @@ fetch('/api/chat', {
     species: "dog", 
     age: "3 years"
   })
-})
+});
 ```
 
-### Response Features
-- **Structured JSON**: Consistent format across all endpoints
-- **Signal Analysis**: Present/absent symptom indicators
-- **Confidence Scoring**: Numerical assessment reliability
-- **Multiple Differentials**: Alternative diagnoses considered
-- **Actionable Instructions**: Specific care recommendations
-
 ## ⚡ Advanced Features
+
+### ROMA Service Integration
+- **Real-time Communication**: Direct connection to ROMA reasoning service
+- **Health Monitoring**: Continuous service availability checks
+- **Graceful Fallback**: System continues without ROMA if unavailable
+- **Container Networking**: Secure internal Docker communication
+- **Timeout Handling**: Configurable request timeouts (15s reasoning, 2s health)
 
 ### Signal Detection & Analysis
 - **Synonym Recognition**: Advanced text matching for symptoms
@@ -237,7 +330,7 @@ fetch('/api/chat', {
 - **Logo Integration**: Custom branding in bottom-right corner
 - **Social Links**: GitHub repository and X profile links
 - **Professional Footer**: Contact and legal information
-- **Powered By**: Clear attribution and credits
+- **ROMA Attribution**: Clear credit to sentient-agi/ROMA project
 
 ## ⚠️ Important Disclaimers
 
@@ -249,8 +342,8 @@ fetch('/api/chat', {
 
 ### Technical Limitations
 - **AI Reliability**: Responses generated by AI may contain errors
+- **Service Dependencies**: Requires ROMA and OpenAI service availability
 - **Connectivity**: Requires internet connection for full functionality
-- **Service Availability**: Dependent on third-party AI services
 - **Data Privacy**: Symptom descriptions are processed by external APIs
 
 ## 🤝 Contributing
@@ -259,9 +352,15 @@ fetch('/api/chat', {
 1. Fork the repository
 2. Create a feature branch
 3. Install dependencies: `npm install`
-4. Set up environment variables
+4. Set up environment variables (OPENAI_API_KEY, ROMA_HOST, ROMA_PORT)
 5. Run tests: `npm test`
 6. Start development server: `npm run dev`
+
+### Docker Development
+1. Build containers: `docker compose build`
+2. Start services: `docker compose up -d`
+3. Monitor logs: `docker compose logs -f`
+4. Test endpoints: `curl` commands above
 
 ### Code Standards
 - TypeScript for type safety
@@ -278,6 +377,12 @@ fetch('/api/chat', {
 - **Multi-Language**: Support for additional languages
 - **Specialized Models**: Species-specific AI training
 
+### ROMA Enhancements
+- **Advanced Reasoning**: More sophisticated ROMA integration
+- **Caching**: Response caching for improved performance
+- **Load Balancing**: Multiple ROMA instances for scalability
+- **Custom Training**: Pet-specific ROMA model training
+
 ### Extended Features  
 - **Health History**: Pet medical record tracking
 - **Vet Integration**: Direct scheduling with local clinics
@@ -285,8 +390,8 @@ fetch('/api/chat', {
 - **Community Features**: Pet owner support networks
 
 ### Technical Improvements
-- **Offline Mode**: Local assessment capabilities
-- **Performance**: Enhanced speed and reliability
+- **Kubernetes**: Container orchestration for production
+- **Monitoring**: Advanced service monitoring and alerts
 - **Analytics**: Assessment accuracy tracking
 - **API Expansion**: Third-party integrations
 
@@ -297,6 +402,7 @@ This project is developed for educational and pet welfare purposes. Use responsi
 ## 🔗 Links
 
 - **GitHub Repository**: https://github.com/chiefmmorgs/pets-iq-assistant
+- **ROMA Integration**: https://github.com/sentient-agi/ROMA
 - **Developer**: [@chief_mmorgs](https://x.com/chief_mmorgs)
 - **Fellow Developer**: [@ui_anon](https://x.com/ui_anon)
 - **Live Demo**: [View Application](https://pets-iq-assistant.onrender.com/)
@@ -305,4 +411,6 @@ This project is developed for educational and pet welfare purposes. Use responsi
 
 **Remember**: This tool enhances but never replaces professional veterinary care. When in doubt, always consult with a qualified veterinarian! 🏥
 
-Made with ❤️ for pets and their humans by [@chief_mmorgs](https://x.com/chief_mmorgs)
+Made with ❤️ for pets and their humans by [@chief_mmorgs](https://x.com/chief_mmorgs) and [@ui_anon](https://x.com/ui_anon)
+
+*Powered by [ROMA](https://github.com/sentient-agi/ROMA) - Advanced AI Reasoning*
