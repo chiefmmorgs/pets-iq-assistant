@@ -175,8 +175,9 @@ async def predict_disease(request: SymptomsRequest):
         all_actions = []
         
         for i in sorted_indices[:3]:  # Top 3 predictions
-            disease = classes[i]
-            confidence = float(probabilities[i])
+            if i < len(classes) and i < len(probabilities):
+                disease = classes[i]
+                confidence = float(probabilities[i])
             
             if confidence > 0.1:  # Only include predictions with reasonable confidence
                 prediction_data = {
