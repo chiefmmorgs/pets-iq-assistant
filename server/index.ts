@@ -11,11 +11,19 @@ const app = express();
 // Security + logging middleware
 app.set('trust proxy', true); // Enable trust proxy for Replit environment
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: process.env.NODE_ENV === "production" 
+    ? [process.env.REPLIT_URL, process.env.CUSTOM_DOMAIN].filter(Boolean)
+    : true // Allow all in development
+}));
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: false }));
 app.use(morgan("tiny"));
 app.use(rateLimit({ windowMs: 60_000, max: 60 }));
+
+// Additional rate limiting for heavy endpoints
+app.use("/api/train", rateLimit({ windowMs: 60_000, max: 1 }));
+app.use("/api/chat", rateLimit({ windowMs: 60_000, max: 10 }));
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -50,12 +58,17 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
-
-    res.status(status).json({ message });
-    throw err;
+    
+    // Log the error for debugging
+    console.error(`Error ${status} on ${req.method} ${req.path}:`, err);
+    
+    // Send response without throwing (avoid process crash)
+    if (!res.headersSent) {
+      res.status(status).json({ message });
+    }
   });
 
   // importantly only setup vite in development and after

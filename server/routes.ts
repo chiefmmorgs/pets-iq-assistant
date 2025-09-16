@@ -43,9 +43,18 @@ export function registerRoutes(app: Express): Server {
     });
   });
 
-  // Retrain model
+  // Retrain model (protected endpoint - requires admin access)
   app.post("/api/train", async (req, res, next) => {
     try {
+      // Basic protection - require admin token in production
+      const adminToken = process.env.ADMIN_TOKEN;
+      if (process.env.NODE_ENV === "production" && adminToken) {
+        const providedToken = req.headers.authorization?.replace("Bearer ", "");
+        if (!providedToken || providedToken !== adminToken) {
+          return res.status(401).json({ ok: false, error: "Unauthorized" });
+        }
+      }
+      
       classifier = await trainAndSave();
       if (fs.existsSync("data/triage.json")) {
         triageMap = JSON.parse(fs.readFileSync("data/triage.json", "utf-8"));
@@ -92,7 +101,17 @@ export function registerRoutes(app: Express): Server {
 
       const label = classifier.classify(features);
       const triage = triageMap[label] || "see_soon";
-      const message = await vetChat(process.env.OPENAI_API_KEY, text, species, age, label, triage);
+      
+      // Graceful degradation for OpenAI errors
+      let message;
+      try {
+        message = await vetChat(process.env.OPENAI_API_KEY, text, species, age, label, triage);
+      } catch (openaiError) {
+        console.warn("OpenAI API failed, using fallback:", openaiError);
+        // Import fallback function
+        const { fallback } = await import("../src/openaiChat.js");
+        message = fallback(label, triage);
+      }
 
       res.json({ ok: true, model_label: label, triage, message });
     } catch (e) { next(e); }
