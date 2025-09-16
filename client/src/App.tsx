@@ -32,7 +32,7 @@ function App() {
           <img 
             src={logoImage} 
             alt="chiefmmorgs" 
-            className="h-4 opacity-70"
+            className="h-8 opacity-70"
           />
         </div>
       </TooltipProvider>
