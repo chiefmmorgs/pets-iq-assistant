@@ -108,14 +108,18 @@ export function ChatInterface({ emergencyDetected, setEmergencyDetected }: ChatI
 
   const statusColors = {
     emergency: 'text-destructive',
-    urgent: 'text-orange-400',
-    home: 'text-accent'
+    urgent: 'text-orange-400', 
+    home: 'text-accent',
+    see_vet_soon: 'text-orange-400',
+    ok: 'text-accent'
   };
 
   const statusIcons = {
     emergency: '🚨',
     urgent: '⚠️',
-    home: '✅'
+    home: '✅',
+    see_vet_soon: '⚠️',
+    ok: '✅'
   };
 
   return (
