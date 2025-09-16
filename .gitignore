@@ -5,3 +5,4 @@ server/public
 vite.config.ts.*
 *.tar.gzattached_assets/
 attached_assets/
+attached_assets/
