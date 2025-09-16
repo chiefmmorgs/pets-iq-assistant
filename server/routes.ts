@@ -2,57 +2,34 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { petAssessmentSchema } from "@shared/schema";
-import { generateROMAAdvice } from "./roma-service";
-import { integrateVetDataHub, getEnhancedTriageData } from "./vetdatahub-integration";
-import { processTelegramUpdate } from "./telegram-bot";
 
 export function registerRoutes(app: Express): Server {
-  // Pet assessment endpoint
+  // Pet assessment endpoint - cleaned up for ML implementation
   app.post("/api/assess", async (req, res) => {
     try {
       const { petType, petAge, symptoms } = petAssessmentSchema.parse(req.body);
       
-      // Get enhanced veterinary data from VetDataHub integration (non-fatal)
-      const symptomWords = symptoms.toLowerCase().split(/\s+/).filter(word => word.length > 2);
-      let enhancedData = null;
-      try {
-        enhancedData = await getEnhancedTriageData(petType, symptomWords);
-      } catch (error) {
-        console.warn("VetDataHub integration failed (continuing with local processing):", error.message || error);
-      }
-      
-      // Generate ROMA-powered triage response with enhanced context
-      const triageResult = await generateROMAAdvice(petType, petAge, symptoms, enhancedData);
-      
-      // Store assessment
-      const assessment = await storage.createAssessment({
+      // TODO: Replace with ML model prediction + GPT-3.5 integration
+      // For now, return a simple response structure
+      const assessment = {
+        id: Date.now().toString(),
         petType,
         petAge,
         symptoms,
-        triage: triageResult.triage,
-        advice: triageResult.advice,
-      });
+        triage: "pending_ml_implementation",
+        advice: "ML model integration coming soon",
+        predictedDiseases: [], // Will be populated by ML model
+        gptResponse: "", // Will be populated by GPT-3.5
+      };
 
-      res.json({
-        id: assessment.id,
-        ...triageResult,
-        // Include enhanced data info for debugging (optional)
-        ...(enhancedData && {
-          enhancedDataUsed: {
-            breedInfo: !!enhancedData.breedInfo,
-            symptomPatterns: enhancedData.symptomPatterns?.length || 0,
-            knowledgeBase: enhancedData.knowledgeBase?.length || 0
-          }
-        })
-      });
+      res.json(assessment);
     } catch (error) {
       console.error("Assessment error:", error);
       
-      // Return 400 only for validation errors, 500 for other errors
-      if (error.name === 'ZodError') {
+      if (error instanceof Error && error.name === 'ZodError') {
         res.status(400).json({ 
           message: "Invalid request data",
-          details: error.issues 
+          details: (error as any).issues 
         });
       } else {
         res.status(500).json({ 
@@ -62,100 +39,39 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Get assessment by ID
-  app.get("/api/assessment/:id", async (req, res) => {
-    try {
-      const assessment = await storage.getAssessment(req.params.id);
-      if (!assessment) {
-        return res.status(404).json({ message: "Assessment not found" });
-      }
-      res.json(assessment);
-    } catch (error) {
-      console.error("Get assessment error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // VetDataHub Integration Routes
+  // ML Model endpoints - to be implemented
   
-  // Populate database with VetDataHub data (Development only - remove in production)
-  app.post("/api/vetdatahub/integrate", async (req, res) => {
-    // Security: Only allow in development environment
-    if (process.env.NODE_ENV === 'production') {
-      return res.status(403).json({ 
-        message: "VetDataHub integration is only available in development mode" 
-      });
-    }
-
+  // Train ML model with CSV data
+  app.post("/api/ml/train", async (req, res) => {
     try {
-      console.log("🚀 Starting VetDataHub integration...");
-      const result = await integrateVetDataHub();
-      
-      if (result.success) {
-        res.json({ 
-          message: "VetDataHub integration completed successfully!",
-          details: result.message 
-        });
-      } else {
-        res.status(500).json({ 
-          message: "VetDataHub integration failed",
-          error: result.error 
-        });
-      }
+      // TODO: Implement ML model training
+      res.json({ message: "ML training endpoint - to be implemented" });
     } catch (error) {
-      console.error("VetDataHub integration error:", error);
-      res.status(500).json({ 
-        message: "Internal server error during VetDataHub integration",
-        error: error instanceof Error ? error.message : "Unknown error"
-      });
+      console.error("ML training error:", error);
+      res.status(500).json({ message: "ML training failed" });
     }
   });
 
-  // Get enhanced triage data (for debugging/testing)
-  app.post("/api/vetdatahub/triage", async (req, res) => {
+  // Predict diseases from symptoms
+  app.post("/api/ml/predict", async (req, res) => {
     try {
-      const { petType, symptoms, breed } = req.body;
+      const { symptoms } = req.body;
       
-      if (!petType || !symptoms) {
-        return res.status(400).json({ message: "petType and symptoms are required" });
+      if (!symptoms) {
+        return res.status(400).json({ message: "symptoms are required" });
       }
       
-      const enhancedData = await getEnhancedTriageData(
-        petType,
-        Array.isArray(symptoms) ? symptoms : [symptoms],
-        breed
-      );
-      
-      res.json(enhancedData || { message: "No enhanced data available" });
+      // TODO: Implement ML prediction + GPT-3.5 integration
+      res.json({ 
+        predictedDiseases: [],
+        confidence: [],
+        gptResponse: "Coming soon - ML integration",
+        message: "ML prediction endpoint - to be implemented" 
+      });
     } catch (error) {
-      console.error("Enhanced triage data error:", error);
-      res.status(500).json({ message: "Internal server error" });
+      console.error("ML prediction error:", error);
+      res.status(500).json({ message: "ML prediction failed" });
     }
-  });
-
-  // Telegram Bot Webhook Endpoint
-  app.post("/api/telegram/webhook", async (req, res) => {
-    try {
-      console.log('📱 Telegram webhook received:', JSON.stringify(req.body, null, 2));
-      
-      // Process the Telegram update
-      await processTelegramUpdate(req.body);
-      
-      // Telegram expects a 200 OK response
-      res.status(200).json({ ok: true });
-    } catch (error) {
-      console.error("❌ Telegram webhook error:", error);
-      res.status(500).json({ error: "Webhook processing failed" });
-    }
-  });
-
-  // Health check endpoint for Telegram bot
-  app.get("/api/telegram/status", (req, res) => {
-    res.json({ 
-      status: "Pets IQ Telegram Bot Active",
-      timestamp: new Date().toISOString(),
-      botEnabled: !!process.env.TELEGRAM_BOT_TOKEN
-    });
   });
 
   const httpServer = createServer(app);

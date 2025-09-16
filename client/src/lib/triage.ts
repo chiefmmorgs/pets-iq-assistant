@@ -1,33 +1,4 @@
-export const TRIAGE_RULES = {
-  emergency_keywords: [
-    "bleeding", "choking", "collapsed", "seizure", "poison",
-    "breathing", "blue gums", "pale gums", "heatstroke",
-    "cant urinate", "cannot urinate", "blocked",
-    "struggling to breathe", "hit by car"
-  ],
-  see_vet_soon_keywords: [
-    "lethargic", "not eating", "not drinking", "vomiting", "appetite",
-    "diarrhea", "pain", "limping", "cough", "itching", "rash"
-  ]
-};
-
-export function classifySymptoms(text: string): "emergency" | "see_vet_soon" | "ok" {
-  const lowerText = text.toLowerCase();
-  
-  for (const keyword of TRIAGE_RULES.emergency_keywords) {
-    if (lowerText.includes(keyword)) {
-      return "emergency";
-    }
-  }
-  
-  for (const keyword of TRIAGE_RULES.see_vet_soon_keywords) {
-    if (lowerText.includes(keyword)) {
-      return "see_vet_soon";
-    }
-  }
-  
-  return "ok";
-}
+// Old triage rules removed - will be replaced with ML model predictions
 
 export const QUICK_HELP_ITEMS = [
   {
