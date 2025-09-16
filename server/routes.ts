@@ -12,9 +12,14 @@ export function registerRoutes(app: Express): Server {
     try {
       const { petType, petAge, symptoms } = petAssessmentSchema.parse(req.body);
       
-      // Get enhanced veterinary data from VetDataHub integration
+      // Get enhanced veterinary data from VetDataHub integration (non-fatal)
       const symptomWords = symptoms.toLowerCase().split(/\s+/).filter(word => word.length > 2);
-      const enhancedData = await getEnhancedTriageData(petType, symptomWords);
+      let enhancedData = null;
+      try {
+        enhancedData = await getEnhancedTriageData(petType, symptomWords);
+      } catch (error) {
+        console.warn("VetDataHub integration failed (continuing with local processing):", error.message || error);
+      }
       
       // Generate ROMA-powered triage response with enhanced context
       const triageResult = await generateROMAAdvice(petType, petAge, symptoms, enhancedData);
@@ -42,9 +47,18 @@ export function registerRoutes(app: Express): Server {
       });
     } catch (error) {
       console.error("Assessment error:", error);
-      res.status(400).json({ 
-        message: error instanceof Error ? error.message : "Invalid request" 
-      });
+      
+      // Return 400 only for validation errors, 500 for other errors
+      if (error.name === 'ZodError') {
+        res.status(400).json({ 
+          message: "Invalid request data",
+          details: error.issues 
+        });
+      } else {
+        res.status(500).json({ 
+          message: "Internal server error" 
+        });
+      }
     }
   });
 
