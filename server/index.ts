@@ -9,8 +9,10 @@ import { setupVite, serveStatic, log } from "./vite";
 const app = express();
 
 // Security + logging middleware
-app.set('trust proxy', true); // Enable trust proxy for Replit environment
-app.use(helmet());
+app.set('trust proxy', 1); // Enable trust proxy for Replit environment with specific hop count
+app.use(helmet({
+  contentSecurityPolicy: false // Disable CSP to avoid conflicts with Vite dev server
+}));
 app.use(cors({
   origin: process.env.NODE_ENV === "production" 
     ? [process.env.REPLIT_URL, process.env.CUSTOM_DOMAIN].filter(Boolean)
@@ -19,11 +21,28 @@ app.use(cors({
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: false }));
 app.use(morgan("tiny"));
-app.use(rateLimit({ windowMs: 60_000, max: 60 }));
 
-// Additional rate limiting for heavy endpoints
-app.use("/api/train", rateLimit({ windowMs: 60_000, max: 1 }));
-app.use("/api/chat", rateLimit({ windowMs: 60_000, max: 10 }));
+// Apply rate limiting only to API endpoints, not static assets
+app.use("/api", rateLimit({ 
+  windowMs: 60_000, 
+  max: 100, // More generous limit for all API endpoints
+  standardHeaders: true,
+  legacyHeaders: false,
+}));
+
+// Additional rate limiting for specific heavy endpoints
+app.use("/api/train", rateLimit({ 
+  windowMs: 60_000, 
+  max: 1,
+  standardHeaders: true,
+  legacyHeaders: false,
+}));
+app.use("/api/chat", rateLimit({ 
+  windowMs: 60_000, 
+  max: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+}));
 
 app.use((req, res, next) => {
   const start = Date.now();

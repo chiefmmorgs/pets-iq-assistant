@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { petAssessmentSchema, type PetAssessmentRequest, type TriageResponse } from "@shared/schema";
+import { petAssessmentSchema, type PetAssessmentRequest, type TriageResponse, type ChatResponse } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
@@ -39,14 +39,40 @@ export function ChatInterface({ emergencyDetected, setEmergencyDetected }: ChatI
   const assessmentMutation = useMutation({
     mutationFn: async (data: PetAssessmentRequest) => {
       try {
-        const response = await apiRequest("POST", "/api/assess", data);
+        // Transform frontend data to backend format
+        const backendRequest = {
+          text: data.symptoms,
+          species: data.petType,
+          age: data.petAge
+        };
+        
+        const response = await apiRequest("POST", "/api/chat", backendRequest);
         
         if (!response.ok) {
           throw new Error(`Assessment failed: ${response.status}`);
         }
         
-        const result = await response.json();
-        return result as TriageResponse & { id: string };
+        const result = await response.json() as ChatResponse;
+        
+        // Transform backend response to frontend format
+        const triageResponse: TriageResponse = {
+          triage: result.triage === "emergency" ? "emergency" : 
+                 result.triage === "see_soon" ? "see_vet_soon" : "ok",
+          summary: result.message,
+          advice: [
+            "Monitor your pet's condition closely",
+            "Follow the guidance provided above",
+            "Contact your veterinarian if symptoms worsen"
+          ],
+          when_to_see_vet: result.triage === "emergency" 
+            ? "Seek immediate veterinary attention"
+            : result.triage === "see_soon" 
+            ? "Schedule a veterinary appointment within 24-48 hours"
+            : "Continue monitoring and seek veterinary care if symptoms persist or worsen",
+          disclaimer: "This AI assessment is for informational purposes only and does not replace professional veterinary advice."
+        };
+        
+        return triageResponse;
       } catch (error) {
         console.error("Assessment mutation error:", error);
         throw error;

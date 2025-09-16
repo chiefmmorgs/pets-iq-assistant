@@ -1,11 +1,42 @@
 import { z } from "zod";
 
-// Minimal schema - ready for your custom implementation
+// Pet assessment schema for frontend
 export const petAssessmentSchema = z.object({
   petType: z.string().min(1, "Pet type is required"),
   petAge: z.string().min(1, "Pet age is required"), 
   symptoms: z.string().min(10, "Please describe symptoms in at least 10 characters"),
 });
 
-// Types
+// Backend API request schema
+export const predictSchema = z.object({
+  text: z.string().min(3),
+  species: z.string().optional(),
+  age: z.union([z.number(), z.string()]).optional()
+});
+
+// API Response types
+export interface PredictResponse {
+  ok: boolean;
+  label: string;
+  triage: "emergency" | "see_soon" | "general";
+  scores: Array<{label: string; value: number}>;
+}
+
+export interface ChatResponse {
+  ok: boolean;
+  model_label: string;
+  triage: "emergency" | "see_soon" | "general";
+  message: string;
+}
+
+// Legacy types for compatibility
+export interface TriageResponse {
+  triage: "emergency" | "see_vet_soon" | "ok";
+  summary: string;
+  advice: string[];
+  when_to_see_vet: string;
+  disclaimer: string;
+}
+
 export type PetAssessment = z.infer<typeof petAssessmentSchema>;
+export type PetAssessmentRequest = PetAssessment;
