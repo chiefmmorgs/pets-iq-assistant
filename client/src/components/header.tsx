@@ -1,4 +1,3 @@
-import petCollagePath from "@assets/image_1757678502259.png";
 
 export function Header() {
   return (
@@ -8,14 +7,11 @@ export function Header() {
           <div className="flex items-center gap-4">
             {/* Geometric logo with pet collage pattern */}
             <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gradient-to-br from-primary via-accent to-secondary p-0.5">
-              <div className="w-full h-full rounded-lg overflow-hidden">
-                <img 
-                  src={petCollagePath} 
-                  alt="Pet care logo with various dogs and cats" 
-                  className="w-full h-full object-cover opacity-80" 
-                />
+              <div className="w-full h-full rounded-lg overflow-hidden bg-gradient-to-br from-primary via-accent to-secondary flex items-center justify-center">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
               </div>
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-accent/20 to-secondary/20 mix-blend-overlay"></div>
             </div>
             <div>
               <h1 className="text-xl font-bold font-display text-foreground">Pets IQ Bot</h1>

@@ -1,9 +1,9 @@
-modules = ["nodejs-20", "web", "postgresql-16", "python-3.11", "python3"]
+modules = ["python-3.11", "nodejs-20", "web"]
 run = "npm run dev"
 hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
 [nix]
-channel = "stable-24_05"
+channel = "stable-25_05"
 packages = ["glibcLocales", "libxcrypt"]
 
 [deployment]
@@ -42,6 +42,10 @@ externalPort = 6000
 [[ports]]
 localPort = 42669
 externalPort = 3003
+
+[[ports]]
+localPort = 42799
+externalPort = 8000
 
 [[ports]]
 localPort = 46103

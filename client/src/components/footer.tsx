@@ -1,4 +1,3 @@
-import logoUrl from '@assets/chiefmmorgs_white_1757691242974.png';
 
 export function Footer() {
   return (
@@ -28,13 +27,8 @@ export function Footer() {
             <p>&copy; 2025 Pets IQ Bot. Powered by AI veterinary expertise.</p>
           </div>
           <div className="absolute bottom-0 left-0 flex items-center gap-2 text-xs text-muted-foreground/70 pointer-events-none">
-            <span data-testid="text-branding">something by</span>
-            <img 
-              src={logoUrl} 
-              alt="Chiefmmorgs logo" 
-              className="h-6 w-auto opacity-80"
-              data-testid="img-brand-logo"
-            />
+            <span data-testid="text-branding">Pets IQ Bot</span>
+            <div className="h-6 w-6 rounded bg-gradient-to-br from-primary to-accent opacity-80" data-testid="img-brand-logo"></div>
           </div>
         </div>
       </div>
