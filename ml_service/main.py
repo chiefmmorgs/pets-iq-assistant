@@ -175,23 +175,26 @@ async def predict_disease(request: SymptomsRequest):
         all_actions = []
         
         for i in sorted_indices[:3]:  # Top 3 predictions
-            if i < len(classes) and i < len(probabilities):
+            if (i < len(classes) and 
+                probabilities is not None and 
+                hasattr(probabilities, '__len__') and 
+                i < len(probabilities)):
                 disease = classes[i]
                 confidence = float(probabilities[i])
-            
-            if confidence > 0.1:  # Only include predictions with reasonable confidence
-                prediction_data = {
-                    "disease": disease,
-                    "probability": confidence,
-                    "urgency": disease_actions.get(disease, {}).get("urgency", "moderate")
-                }
                 
-                top_predictions.append(prediction_data)
-                confidence_scores.append(confidence)
-                
-                # Add recommended actions
-                actions = disease_actions.get(disease, {}).get("actions", [])
-                all_actions.extend(actions)
+                if confidence > 0.1:  # Only include predictions with reasonable confidence
+                    prediction_data = {
+                        "disease": disease,
+                        "probability": confidence,
+                        "urgency": disease_actions.get(disease, {}).get("urgency", "moderate")
+                    }
+                    
+                    top_predictions.append(prediction_data)
+                    confidence_scores.append(confidence)
+                    
+                    # Add recommended actions
+                    actions = disease_actions.get(disease, {}).get("actions", [])
+                    all_actions.extend(actions)
         
         # Remove duplicate actions
         unique_actions = list(dict.fromkeys(all_actions))
