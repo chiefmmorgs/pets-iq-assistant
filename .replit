@@ -1,4 +1,4 @@
-modules = ["python-3.11", "nodejs-20", "web", "python3"]
+modules = ["nodejs-20", "web"]
 run = "npm run dev"
 hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
@@ -42,6 +42,10 @@ externalPort = 3000
 [[ports]]
 localPort = 41027
 externalPort = 6000
+
+[[ports]]
+localPort = 41673
+externalPort = 8008
 
 [[ports]]
 localPort = 42669
