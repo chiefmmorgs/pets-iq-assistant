@@ -1,4 +1,6 @@
 
+import petCollagePath from "@assets/image_1758019973764.png";
+
 export function Header() {
   return (
     <header className="border-b border-border/50 bg-background/80 backdrop-blur-sm sticky top-0 z-50">
@@ -9,7 +11,7 @@ export function Header() {
             <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gradient-to-br from-primary via-accent to-secondary p-0.5">
               <div className="w-full h-full rounded-lg overflow-hidden">
                 <img 
-                  src="/attached_assets/image_1758019973764.png" 
+                  src={petCollagePath} 
                   alt="Pet care logo with various dogs and cats" 
                   className="w-full h-full object-cover opacity-80" 
                 />
