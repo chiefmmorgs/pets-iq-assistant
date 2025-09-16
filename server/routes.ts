@@ -34,7 +34,12 @@ async function initializeModel() {
 initializeModel();
 
 export function registerRoutes(app: Express): Server {
-  // Health check
+  // Health check for Docker (simple)
+  app.get("/health", (req, res) => {
+    res.json({ ok: true });
+  });
+
+  // Detailed health check
   app.get("/api/health", (req, res) => {
     res.json({
       ok: true,
