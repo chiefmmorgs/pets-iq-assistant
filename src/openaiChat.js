@@ -17,7 +17,7 @@ export async function vetChat(apiKey, userText, species, age, predicted, triage)
   ].filter(Boolean).join("\n");
 
   const resp = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+    model: "gpt-3.5-turbo",
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
       { role: "user", content }
