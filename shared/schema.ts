@@ -43,6 +43,7 @@ export interface StructuredAssessmentResponse {
 
 export interface EnhancedChatResponse extends StructuredAssessmentResponse {
   message: string;
+  roma_analysis?: any; // Roma agent analysis when available
 }
 
 // Legacy types for compatibility

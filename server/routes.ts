@@ -78,13 +78,24 @@ export function registerRoutes(app: Express): Server {
     } catch (e) { next(e); }
   });
 
-  // Chat endpoint - Enhanced with knowledge base and structured responses
+  // Chat endpoint - Enhanced with knowledge base, OpenAI, and Roma agent integration
   app.post("/api/chat", async (req, res, next) => {
     try {
       const { text, species, age } = parseBody(predictSchema, req.body || {});
       
       // Get knowledge base assessment
       const kbAssessment = await predictWithKnowledgeBase(text, species, age);
+      
+      // Get Roma agent analysis (parallel with other assessments)
+      let romaAnalysis = null;
+      try {
+        const romaResult = await askRoma(text);
+        if (romaResult.ok !== false) {
+          romaAnalysis = romaResult;
+        }
+      } catch (romaError) {
+        console.log("Roma agent not available:", romaError.message);
+      }
       
       // Get structured AI response with knowledge base context
       let aiResponse;
@@ -97,11 +108,15 @@ export function registerRoutes(app: Express): Server {
         aiResponse = fallback(kbAssessment);
       }
 
-      res.json({ 
+      // Combine all assessment sources
+      const response = { 
         ok: true, 
         ...aiResponse,
+        roma_analysis: romaAnalysis, // Include Roma insights when available
         request_id: Math.random().toString(36).substr(2, 8)
-      });
+      };
+
+      res.json(response);
     } catch (e) { next(e); }
   });
 

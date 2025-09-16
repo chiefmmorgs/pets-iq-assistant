@@ -318,6 +318,24 @@ export function ChatInterface({ emergencyDetected, setEmergencyDetected }: ChatI
                       </ul>
                     </div>
                     
+                    {/* Roma Agent Analysis */}
+                    {message.enhancedResponse.roma_analysis && (
+                      <div className="space-y-3 border-t border-border pt-4">
+                        <h4 className="font-medium text-foreground flex items-center gap-2">
+                          <span className="text-sm">🤖</span>
+                          Roma Agent Insights
+                        </h4>
+                        <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                          <pre className="text-xs text-blue-800 dark:text-blue-200 whitespace-pre-wrap">
+                            {typeof message.enhancedResponse.roma_analysis === 'object' 
+                              ? JSON.stringify(message.enhancedResponse.roma_analysis, null, 2)
+                              : message.enhancedResponse.roma_analysis
+                            }
+                          </pre>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Triage Level */}
                     <div className="border-t border-border pt-4">
                       <p className="text-sm">
