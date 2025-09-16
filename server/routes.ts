@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import fs from "fs";
-import { trainAndSave, loadModel, bucketAge, type Classifier } from "../src/ml.js";
+import { trainAndSave, loadModel, bucketAge, type Classifier, predictWithKnowledgeBase } from "../src/ml.js";
 import { DISEASE_TRIAGE } from "../src/triageMap.js";
 import { vetChat } from "../src/openaiChat.js";
 import { askRoma } from "../src/romaClient.js";
@@ -63,57 +63,45 @@ export function registerRoutes(app: Express): Server {
     } catch (e) { next(e); }
   });
 
-  // Predict endpoint
-  app.post("/api/predict", (req, res, next) => {
+  // Predict endpoint - Enhanced with knowledge base
+  app.post("/api/predict", async (req, res, next) => {
     try {
-      if (!classifier) {
-        return res.status(503).json({ ok: false, error: "Model not ready" });
-      }
-      
       const { text, species, age } = parseBody(predictSchema, req.body || {});
-      const features = [
-        String(text),
-        species ? `species_${species}` : "",
-        age ? `age_${bucketAge(age)}` : ""
-      ].filter(Boolean).join(" ").toLowerCase();
-
-      const label = classifier.classify(features);
-      const scores = classifier.getClassifications(features);
-      const triage = triageMap[label] || "see_soon";
-
-      res.json({ ok: true, label, triage, scores: scores.slice(0, 5) });
+      
+      // Use enhanced prediction with knowledge base
+      const assessment = await predictWithKnowledgeBase(text, species, age);
+      
+      res.json({ 
+        ok: true, 
+        ...assessment
+      });
     } catch (e) { next(e); }
   });
 
-  // Chat endpoint
+  // Chat endpoint - Enhanced with knowledge base and structured responses
   app.post("/api/chat", async (req, res, next) => {
     try {
-      if (!classifier) {
-        return res.status(503).json({ ok: false, error: "Model not ready" });
-      }
-      
       const { text, species, age } = parseBody(predictSchema, req.body || {});
-      const features = [
-        String(text),
-        species ? `species_${species}` : "",
-        age ? `age_${bucketAge(age)}` : ""
-      ].filter(Boolean).join(" ").toLowerCase();
-
-      const label = classifier.classify(features);
-      const triage = triageMap[label] || "see_soon";
       
-      // Graceful degradation for OpenAI errors
-      let message;
+      // Get knowledge base assessment
+      const kbAssessment = await predictWithKnowledgeBase(text, species, age);
+      
+      // Get structured AI response with knowledge base context
+      let aiResponse;
       try {
-        message = await vetChat(process.env.OPENAI_API_KEY, text, species, age, label, triage);
+        aiResponse = await vetChat(process.env.OPENAI_API_KEY, text, species, age, kbAssessment);
       } catch (openaiError) {
         console.warn("OpenAI API failed, using fallback:", openaiError);
         // Import fallback function
         const { fallback } = await import("../src/openaiChat.js");
-        message = fallback(label, triage);
+        aiResponse = fallback(kbAssessment);
       }
 
-      res.json({ ok: true, model_label: label, triage, message });
+      res.json({ 
+        ok: true, 
+        ...aiResponse,
+        request_id: Math.random().toString(36).substr(2, 8)
+      });
     } catch (e) { next(e); }
   });
 

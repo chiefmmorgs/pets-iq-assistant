@@ -14,7 +14,38 @@ export const predictSchema = z.object({
   age: z.union([z.number(), z.string()]).optional()
 });
 
-// API Response types
+// Enhanced API Response types with structured assessment data
+export interface Signal {
+  name: string;
+  weight: number;
+  present: boolean;
+}
+
+export interface Differential {
+  name: string;
+  why: string;
+}
+
+export interface StructuredAssessmentResponse {
+  ok: boolean;
+  category: string;
+  disease: string;
+  signals: Signal[];
+  differentials: Differential[];
+  triage: "emergency" | "urgent" | "home";
+  red_flags: string[];
+  actions: string[];
+  confidence: number;
+  assessment_method?: string;
+  ml_prediction?: string;
+  request_id?: string;
+}
+
+export interface EnhancedChatResponse extends StructuredAssessmentResponse {
+  message: string;
+}
+
+// Legacy types for compatibility
 export interface PredictResponse {
   ok: boolean;
   label: string;

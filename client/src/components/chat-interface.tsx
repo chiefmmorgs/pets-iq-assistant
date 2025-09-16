@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { petAssessmentSchema, type PetAssessmentRequest, type TriageResponse, type ChatResponse } from "@shared/schema";
+import { petAssessmentSchema, type PetAssessmentRequest, type TriageResponse, type EnhancedChatResponse } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
@@ -17,6 +17,7 @@ interface ChatMessage {
   content: string;
   isUser: boolean;
   response?: TriageResponse;
+  enhancedResponse?: EnhancedChatResponse;
 }
 
 interface ChatInterfaceProps {
@@ -52,27 +53,10 @@ export function ChatInterface({ emergencyDetected, setEmergencyDetected }: ChatI
           throw new Error(`Assessment failed: ${response.status}`);
         }
         
-        const result = await response.json() as ChatResponse;
+        const result = await response.json() as EnhancedChatResponse;
         
-        // Transform backend response to frontend format
-        const triageResponse: TriageResponse = {
-          triage: result.triage === "emergency" ? "emergency" : 
-                 result.triage === "see_soon" ? "see_vet_soon" : "ok",
-          summary: result.message,
-          advice: [
-            "Monitor your pet's condition closely",
-            "Follow the guidance provided above",
-            "Contact your veterinarian if symptoms worsen"
-          ],
-          when_to_see_vet: result.triage === "emergency" 
-            ? "Seek immediate veterinary attention"
-            : result.triage === "see_soon" 
-            ? "Schedule a veterinary appointment within 24-48 hours"
-            : "Continue monitoring and seek veterinary care if symptoms persist or worsen",
-          disclaimer: "This AI assessment is for informational purposes only and does not replace professional veterinary advice."
-        };
-        
-        return triageResponse;
+        // Enhanced response includes all structured data
+        return result;
       } catch (error) {
         console.error("Assessment mutation error:", error);
         throw error;
@@ -86,17 +70,17 @@ export function ChatInterface({ emergencyDetected, setEmergencyDetected }: ChatI
         isUser: true,
       };
 
-      // Add AI response
+      // Add AI response with enhanced data
       const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        content: response.summary,
+        content: response.message,
         isUser: false,
-        response,
+        enhancedResponse: response,
       };
 
       setMessages(prev => [...prev, userMessage, aiMessage]);
       
-      // Handle emergency detection
+      // Handle emergency detection (map new triage values)
       if (response.triage === "emergency") {
         setEmergencyDetected(true);
       } else {
@@ -124,14 +108,14 @@ export function ChatInterface({ emergencyDetected, setEmergencyDetected }: ChatI
 
   const statusColors = {
     emergency: 'text-destructive',
-    see_vet_soon: 'text-orange-400',
-    ok: 'text-accent'
+    urgent: 'text-orange-400',
+    home: 'text-accent'
   };
 
   const statusIcons = {
     emergency: '🚨',
-    see_vet_soon: '⚠️',
-    ok: '✅'
+    urgent: '⚠️',
+    home: '✅'
   };
 
   return (
@@ -252,7 +236,113 @@ export function ChatInterface({ emergencyDetected, setEmergencyDetected }: ChatI
               </div>
             ) : (
               <div className="bg-card border border-border p-6 rounded-2xl rounded-bl-md shadow-lg">
-                {message.response && (
+                {message.enhancedResponse && (
+                  <div className="space-y-4">
+                    {/* Header with disease and category */}
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">
+                        {message.enhancedResponse.triage === "emergency" ? "🚨" : 
+                         message.enhancedResponse.triage === "urgent" ? "⚠️" : "✅"}
+                      </span>
+                      <div>
+                        <h3 className="font-semibold font-display">
+                          {message.enhancedResponse.disease} ({message.enhancedResponse.category})
+                        </h3>
+                        <p className="text-sm text-muted-foreground">{message.enhancedResponse.message}</p>
+                        <p className="text-xs text-muted-foreground">Confidence: {Math.round(message.enhancedResponse.confidence * 100)}%</p>
+                      </div>
+                    </div>
+
+                    {/* Red Flags Alert */}
+                    {message.enhancedResponse.red_flags.length > 0 && (
+                      <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3">
+                        <h4 className="font-medium text-destructive flex items-center gap-2">
+                          <AlertTriangle className="h-4 w-4" />
+                          Red Flags Detected
+                        </h4>
+                        <ul className="text-sm text-destructive/80 mt-2 space-y-1">
+                          {message.enhancedResponse.red_flags.map((flag, index) => (
+                            <li key={index}>• {flag}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Symptom Analysis */}
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-foreground">Symptom Analysis:</h4>
+                      <div className="grid gap-2">
+                        {message.enhancedResponse.signals
+                          .sort((a, b) => b.weight - a.weight)
+                          .map((signal, index) => (
+                          <div key={index} className="flex items-center justify-between p-2 rounded border">
+                            <span className="text-sm">{signal.name}</span>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-xs px-2 py-1 rounded ${signal.present ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                                {signal.present ? 'Present' : 'Not observed'}
+                              </span>
+                              <span className="text-xs font-medium">Weight: {signal.weight}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Differential Diagnosis */}
+                    {message.enhancedResponse.differentials.length > 0 && (
+                      <div className="space-y-3">
+                        <h4 className="font-medium text-foreground">Possible Conditions:</h4>
+                        <div className="space-y-2">
+                          {message.enhancedResponse.differentials.map((diff, index) => (
+                            <div key={index} className="bg-muted/30 p-3 rounded-lg">
+                              <div className="font-medium text-sm">{diff.name}</div>
+                              <div className="text-xs text-muted-foreground">{diff.why}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Recommended Actions */}
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-foreground">Recommended Actions:</h4>
+                      <ul className="space-y-2">
+                        {message.enhancedResponse.actions.map((action, index) => (
+                          <li key={index} className="flex items-start gap-3">
+                            <span className="flex-shrink-0 w-6 h-6 bg-accent/20 text-accent rounded-full flex items-center justify-center text-sm font-medium">
+                              {index + 1}
+                            </span>
+                            <span className="text-sm">{action}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    
+                    {/* Triage Level */}
+                    <div className="border-t border-border pt-4">
+                      <p className="text-sm">
+                        <strong className={
+                          message.enhancedResponse.triage === "emergency" ? "text-destructive" :
+                          message.enhancedResponse.triage === "urgent" ? "text-orange-400" :
+                          "text-accent"
+                        }>
+                          Triage Level:
+                        </strong> {
+                          message.enhancedResponse.triage === "emergency" ? "Emergency - Seek immediate veterinary care" :
+                          message.enhancedResponse.triage === "urgent" ? "Urgent - Schedule vet visit within 24-48 hours" :
+                          "Home Care - Monitor and provide supportive care"
+                        }
+                      </p>
+                    </div>
+                    
+                    <div className="text-xs text-muted-foreground bg-muted/30 p-3 rounded-lg">
+                      <p>This AI assessment is for informational purposes only and does not replace professional veterinary advice. Assessment method: {message.enhancedResponse.assessment_method || 'knowledge_base'}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Legacy support for old message format */}
+                {message.response && !message.enhancedResponse && (
                   <div className="space-y-4">
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">{statusIcons[message.response.triage]}</span>

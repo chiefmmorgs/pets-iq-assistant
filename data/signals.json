@@ -1,0 +1,101 @@
+[
+  {
+    "category": "gastrointestinal",
+    "disease": "gastroenteritis",
+    "signals": [
+      {"name": "vomiting", "weight": 9},
+      {"name": "diarrhea", "weight": 8},
+      {"name": "loss of appetite", "weight": 7},
+      {"name": "lethargy", "weight": 6},
+      {"name": "abdominal pain", "weight": 5},
+      {"name": "dehydration", "weight": 7}
+    ],
+    "red_flags": ["blood in vomit", "black stool", "unable to keep water down", "severe dehydration", "continuous vomiting"],
+    "home_care": ["withhold food 6-12h then small bland meals", "provide fresh water frequently", "monitor hydration", "rest in quiet area"],
+    "differentials": ["dietary indiscretion", "viral infection", "bacterial infection", "parasites"]
+  },
+  {
+    "category": "musculoskeletal",
+    "disease": "soft tissue injury",
+    "signals": [
+      {"name": "limping", "weight": 9},
+      {"name": "pain on touch", "weight": 8},
+      {"name": "reduced activity", "weight": 6},
+      {"name": "swelling", "weight": 5},
+      {"name": "reluctance to move", "weight": 7}
+    ],
+    "red_flags": ["no weight bearing", "open wound", "sudden severe pain after trauma", "visible bone", "severe swelling"],
+    "home_care": ["restrict activity 24-48h", "cold compress 10min x3 daily", "no human pain medications", "soft bedding"],
+    "differentials": ["muscle strain", "ligament sprain", "bruising", "minor fracture"]
+  },
+  {
+    "category": "respiratory",
+    "disease": "upper respiratory infection",
+    "signals": [
+      {"name": "coughing", "weight": 9},
+      {"name": "nasal discharge", "weight": 8},
+      {"name": "sneezing", "weight": 7},
+      {"name": "reduced appetite", "weight": 5},
+      {"name": "mild lethargy", "weight": 4}
+    ],
+    "red_flags": ["difficulty breathing", "blue gums", "open mouth breathing", "severe coughing", "bloody discharge"],
+    "home_care": ["ensure warm environment", "encourage fluid intake", "use humidifier", "monitor breathing"],
+    "differentials": ["kennel cough", "viral infection", "allergies", "bacterial infection"]
+  },
+  {
+    "category": "urinary",
+    "disease": "urinary tract infection",
+    "signals": [
+      {"name": "frequent urination", "weight": 9},
+      {"name": "straining to urinate", "weight": 8},
+      {"name": "blood in urine", "weight": 7},
+      {"name": "accidents in house", "weight": 6},
+      {"name": "strong urine odor", "weight": 5}
+    ],
+    "red_flags": ["unable to urinate", "severe straining", "crying when urinating", "excessive blood", "lethargy with urinary signs"],
+    "home_care": ["encourage water intake", "frequent potty breaks", "keep genital area clean", "monitor urination"],
+    "differentials": ["bacterial infection", "bladder stones", "cystitis", "urethral blockage"]
+  },
+  {
+    "category": "dermatological",
+    "disease": "skin irritation",
+    "signals": [
+      {"name": "itching", "weight": 9},
+      {"name": "red skin", "weight": 7},
+      {"name": "scratching", "weight": 8},
+      {"name": "hair loss", "weight": 6},
+      {"name": "skin lesions", "weight": 5}
+    ],
+    "red_flags": ["open wounds", "severe swelling", "spreading rapidly", "signs of infection", "extreme discomfort"],
+    "home_care": ["gentle cleaning", "prevent scratching", "cool compress", "avoid irritants"],
+    "differentials": ["allergies", "flea infestation", "contact dermatitis", "bacterial infection"]
+  },
+  {
+    "category": "neurological",
+    "disease": "neurological concern",
+    "signals": [
+      {"name": "seizures", "weight": 10},
+      {"name": "loss of coordination", "weight": 9},
+      {"name": "head tilt", "weight": 8},
+      {"name": "weakness", "weight": 7},
+      {"name": "confusion", "weight": 6}
+    ],
+    "red_flags": ["seizures", "loss of consciousness", "paralysis", "severe disorientation", "inability to stand"],
+    "home_care": ["keep safe and calm", "remove hazards", "monitor closely", "note symptoms"],
+    "differentials": ["vestibular disease", "seizure disorder", "toxicity", "brain injury"]
+  },
+  {
+    "category": "emergency",
+    "disease": "emergency condition",
+    "signals": [
+      {"name": "difficulty breathing", "weight": 10},
+      {"name": "choking", "weight": 10},
+      {"name": "severe bleeding", "weight": 10},
+      {"name": "trauma", "weight": 9},
+      {"name": "collapse", "weight": 10}
+    ],
+    "red_flags": ["all symptoms are red flags"],
+    "home_care": ["seek immediate veterinary care", "keep pet calm", "control bleeding if safe", "transport carefully"],
+    "differentials": ["trauma", "poisoning", "bloat", "cardiac emergency"]
+  }
+]
