@@ -1,4 +1,6 @@
 
+import { SiX } from "react-icons/si";
+
 export function Footer() {
   return (
     <footer className="border-t border-border/50 bg-background/80 backdrop-blur-sm mt-16">
@@ -18,8 +20,20 @@ export function Footer() {
             </ul>
           </div>
           <div>
-            <h4 className="font-semibold mb-3 font-display">Emergency Notice</h4>
-            <p className="text-sm text-muted-foreground">This tool provides guidance only. For true emergencies, contact your veterinarian or emergency animal hospital immediately.</p>
+            <h4 className="font-semibold mb-3 font-display">Connect</h4>
+            <div className="space-y-3">
+              <a 
+                href="https://x.com/chief_mmorgs" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                data-testid="link-twitter"
+              >
+                <SiX className="h-4 w-4" />
+                Follow @chief_mmorgs
+              </a>
+              <p className="text-xs text-muted-foreground">For emergencies, contact your veterinarian immediately.</p>
+            </div>
           </div>
         </div>
         <div className="border-t border-border/50 mt-8 pt-8 relative">
