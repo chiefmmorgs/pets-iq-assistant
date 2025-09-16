@@ -1,0 +1,4 @@
+text,species,age,label,triage
+"My dog is vomiting blood and weak",dog,5,gastric_ulcer,emergency
+"Cat coughing but playful",cat,2,upper_respiratory,see_soon
+"Puppy mild diarrhea, eating ok",dog,1,gastroenteritis,general
