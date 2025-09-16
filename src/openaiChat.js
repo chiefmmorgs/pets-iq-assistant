@@ -1,27 +1,77 @@
 import OpenAI from "openai";
 
-const SYSTEM_PROMPT = `You are an empathetic veterinary assistant helping pet owners understand their pet's symptoms. 
-You must return ONLY valid JSON in the exact format specified below. Do not add any text outside the JSON.
+const ASSESSMENT_SCHEMA = {
+  "type": "object",
+  "properties": {
+    "message": {
+      "type": "string",
+      "maxLength": 150,
+      "description": "Short, caring response explaining the condition"
+    },
+    "category": {
+      "type": "string",
+      "enum": ["gastrointestinal", "musculoskeletal", "respiratory", "urinary", "dermatological", "neurological", "emergency", "general"]
+    },
+    "disease": {
+      "type": "string",
+      "description": "Most likely condition name"
+    },
+    "signals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string"},
+          "present": {"type": "boolean"},
+          "weight": {"type": "integer", "minimum": 1, "maximum": 10}
+        },
+        "required": ["name", "present", "weight"]
+      }
+    },
+    "differentials": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string"},
+          "why": {"type": "string", "maxLength": 50}
+        },
+        "required": ["name", "why"]
+      }
+    },
+    "triage": {
+      "type": "string",
+      "enum": ["emergency", "urgent", "home"]
+    },
+    "red_flags": {
+      "type": "array",
+      "maxItems": 4,
+      "items": {"type": "string"}
+    },
+    "actions": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {"type": "string", "maxLength": 100}
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0.1,
+      "maximum": 0.9
+    }
+  },
+  "required": ["message", "category", "disease", "signals", "differentials", "triage", "red_flags", "actions", "confidence"]
+};
 
-Return a JSON object with these exact fields:
-{
-  "message": "A short, caring response explaining the condition in simple terms",
-  "category": "the medical category (gastrointestinal, musculoskeletal, etc.)",
-  "disease": "the most likely condition name",
-  "signals": [{"name": "symptom name", "present": true/false, "weight": number}],
-  "differentials": [{"name": "alternative condition", "why": "brief reason"}],
-  "triage": "emergency, urgent, or home",
-  "red_flags": ["any concerning signs found"],
-  "actions": ["specific steps pet owner should take"],
-  "confidence": number between 0.1 and 1.0
-}
+const SYSTEM_PROMPT = `You are an empathetic veterinary assistant. You must analyze the symptoms and return structured JSON only.
 
 Rules:
-- Triage: emergency if red flags or severe distress, urgent if pain/concerning symptoms, home otherwise
-- Keep message under 150 characters and empathetic
+- Use the provided signal analysis (marked as present/absent) as your foundation
+- Triage: emergency if red flags or severe distress, urgent if pain/concerning symptoms, home otherwise  
+- Keep message empathetic but under 150 characters
 - Actions should be safe, practical steps - no medications
 - Be conservative with triage - when in doubt, escalate
-- Confidence based on symptom clarity and match`;
+- Return only valid JSON matching the required schema`;
 
 export async function vetChat(apiKey, userText, species, age, knowledgeBaseContext) {
   if (!apiKey) {
@@ -46,9 +96,15 @@ export async function vetChat(apiKey, userText, species, age, knowledgeBaseConte
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content }
       ],
-      temperature: 0.3,
-      max_tokens: 500,
-      response_format: { type: "json_object" }
+      temperature: 0.2,
+      max_tokens: 400,
+      response_format: { 
+        type: "json_schema", 
+        json_schema: {
+          name: "veterinary_assessment",
+          schema: ASSESSMENT_SCHEMA
+        }
+      }
     });
 
     const rawResponse = resp.choices?.[0]?.message?.content?.trim();
@@ -59,17 +115,17 @@ export async function vetChat(apiKey, userText, species, age, knowledgeBaseConte
     try {
       const parsedResponse = JSON.parse(rawResponse);
       
-      // Validate and sanitize the response
+      // Use knowledge base data as foundation, override confidence with our calculation
       return {
         message: parsedResponse.message || "Assessment completed. Please review recommendations below.",
-        category: parsedResponse.category || knowledgeBaseContext?.category || "general",
-        disease: parsedResponse.disease || knowledgeBaseContext?.disease || "unspecified condition",
-        signals: parsedResponse.signals || knowledgeBaseContext?.signals || [],
-        differentials: parsedResponse.differentials || [],
-        triage: parsedResponse.triage || knowledgeBaseContext?.triage || "home",
-        red_flags: parsedResponse.red_flags || knowledgeBaseContext?.red_flags || [],
+        category: knowledgeBaseContext?.category || parsedResponse.category || "general",
+        disease: knowledgeBaseContext?.disease || parsedResponse.disease || "unspecified condition",
+        signals: knowledgeBaseContext?.signals || parsedResponse.signals || [],
+        differentials: parsedResponse.differentials || knowledgeBaseContext?.differentials || [],
+        triage: knowledgeBaseContext?.triage || parsedResponse.triage || "home",
+        red_flags: knowledgeBaseContext?.red_flags || parsedResponse.red_flags || [],
         actions: parsedResponse.actions || knowledgeBaseContext?.actions || ["Monitor your pet and contact a vet if symptoms worsen"],
-        confidence: Math.max(0.1, Math.min(1.0, parsedResponse.confidence || knowledgeBaseContext?.confidence || 0.5))
+        confidence: knowledgeBaseContext?.confidence || 0.5 // Always use our calculated confidence
       };
     } catch (parseError) {
       console.error("Failed to parse OpenAI response:", parseError);

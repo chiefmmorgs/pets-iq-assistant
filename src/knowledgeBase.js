@@ -1,6 +1,7 @@
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { markPresence, confidenceFromSignals } from '../utils/symptoms.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -97,22 +98,23 @@ function determineTriage(matchedSignals, redFlags, category) {
   return 'home';
 }
 
-// Find best matching condition from knowledge base
+// Find best matching condition from knowledge base with structured signal analysis
 export function assessSymptoms(symptoms) {
   const kb = loadKnowledgeBase();
   let bestMatch = null;
   let bestScore = 0;
   
+  // Find the disease with highest signal match
   for (const condition of kb) {
-    const matchedSignals = matchSymptoms(symptoms, condition.signals);
-    const presentSignals = matchedSignals.filter(s => s.present);
+    const markedSignals = markPresence(symptoms, condition.signals);
+    const presentSignals = markedSignals.filter(s => s.present);
     const score = presentSignals.reduce((sum, s) => sum + s.weight, 0);
     
     if (score > bestScore) {
       bestScore = score;
       bestMatch = {
         ...condition,
-        matchedSignals,
+        markedSignals,
         score
       };
     }
@@ -120,36 +122,53 @@ export function assessSymptoms(symptoms) {
   
   if (!bestMatch) {
     // Fallback to general assessment
+    const emptySignals = [];
     return {
       category: 'general',
       disease: 'general concern',
-      matchedSignals: [],
+      signals: emptySignals,
+      differentials: [{ name: 'various conditions possible', why: 'insufficient symptom information' }],
+      triage: 'home',
       red_flags: [],
-      home_care: ['monitor pet closely', 'contact vet if symptoms worsen'],
-      differentials: ['various conditions possible'],
-      score: 0
+      actions: ['monitor pet closely', 'contact vet if symptoms worsen'],
+      confidence: 0.15
     };
   }
+  
+  // Use the new confidence calculation based on signal weights
+  const confidence = confidenceFromSignals(bestMatch.markedSignals);
   
   // Check for red flags
   const presentRedFlags = checkRedFlags(symptoms, bestMatch.red_flags);
   
   // Determine triage level
-  const triage = determineTriage(bestMatch.matchedSignals, presentRedFlags, bestMatch.category);
+  const triage = determineTriage(bestMatch.markedSignals, presentRedFlags, bestMatch.category);
   
-  // Calculate confidence based on matching signals
-  const totalPossibleWeight = bestMatch.signals.reduce((sum, s) => sum + s.weight, 0);
-  const confidence = Math.min(bestScore / totalPossibleWeight, 1.0);
+  // Format signals (present first, then top not-present)
+  const presentSignals = bestMatch.markedSignals.filter(s => s.present);
+  const notPresentSignals = bestMatch.markedSignals.filter(s => !s.present).slice(0, 3);
+  const finalSignals = [...presentSignals, ...notPresentSignals];
+  
+  // Format differentials (max 3)
+  const differentials = bestMatch.differentials.slice(0, 3).map(d => ({ 
+    name: d, 
+    why: 'possible based on symptoms' 
+  }));
+  
+  // Format actions (max 5)
+  const actions = bestMatch.home_care.slice(0, 5);
+  
+  // Format red flags (max 4)
+  const redFlags = presentRedFlags.slice(0, 4);
   
   return {
     category: bestMatch.category,
     disease: bestMatch.disease,
-    signals: bestMatch.matchedSignals,
-    differentials: bestMatch.differentials.map(d => ({ name: d, why: 'possible based on symptoms' })),
+    signals: finalSignals,
+    differentials,
     triage,
-    red_flags: presentRedFlags,
-    actions: bestMatch.home_care,
-    confidence: Math.round(confidence * 100) / 100,
-    score: bestScore
+    red_flags: redFlags,
+    actions,
+    confidence
   };
 }
