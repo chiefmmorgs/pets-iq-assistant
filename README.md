@@ -298,7 +298,8 @@ This project is developed for educational and pet welfare purposes. Use responsi
 
 - **GitHub Repository**: https://github.com/chiefmmorgs/pets-iq-assistant
 - **Developer**: [@chief_mmorgs](https://x.com/chief_mmorgs)
-- **Live Demo**: [View Application](https://pets-iq-assistant.replit.app)
+- **Fellow Developer**: [@ui_anon](https://x.com/ui_anon)
+- **Live Demo**: [View Application](https://pets-iq-assistant.onrender.com/)
 
 ---
 
