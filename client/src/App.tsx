@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
-import logoImage from "@assets/chiefmmorgs-logo.png";
+import logoImage from "./assets/chiefmmorgs-logo.png";
 
 function Router() {
   return (
