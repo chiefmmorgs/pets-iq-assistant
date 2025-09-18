@@ -14,8 +14,8 @@ app.use(helmet({
   contentSecurityPolicy: false // Disable CSP to avoid conflicts with Vite dev server
 }));
 app.use(cors({
-  origin: process.env.NODE_ENV === "production" 
-    ? [process.env.REPLIT_URL, process.env.CUSTOM_DOMAIN].filter(Boolean)
+  origin: process.env.NODE_ENV === "production"
+    ? [process.env.CUSTOM_DOMAIN].filter((domain): domain is string => !!domain)
     : true // Allow all in development
 }));
 app.use(express.json({ limit: "1mb" }));
