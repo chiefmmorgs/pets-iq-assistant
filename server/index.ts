@@ -9,7 +9,7 @@ import { setupVite, serveStatic, log } from "./vite";
 const app = express();
 
 // Security + logging middleware
-app.set('trust proxy', 1); // Enable trust proxy for Replit environment with specific hop count
+app.set('trust proxy', 1);
 app.use(helmet({
   contentSecurityPolicy: false // Disable CSP to avoid conflicts with Vite dev server
 }));
